@@ -1,0 +1,35 @@
+{
+    "name": "msgphp/user-bundle",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "description": "MsgPhp User Bundle",
+    "authors": [
+        {
+            "name": "Roland Franssen",
+            "email": "franssen.roland@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "MsgPhp\\UserBundle\\": "src/"
+        }
+    },
+    "require": {
+        "msgphp/user": "^1.0",
+        "symfony/config": "^3.4|^4.0",
+        "symfony/dependency-injection": "^3.4|^4.0",
+        "symfony/http-kernel": "^3.4|^4.0"
+    },
+    "config": {
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
+}

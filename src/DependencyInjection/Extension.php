@@ -46,7 +46,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     public function load(array $configs, ContainerBuilder $container)
     {
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
-        $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/Resources/config'));
+        $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $bundles = array_flip($container->getParameter('kernel.bundles'));
 
         $loader->load('domain.php');
@@ -159,9 +159,10 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     ],
                     'mappings' => [
                         'MsgPhp\User\Entity' => [
-                            'dir' => dirname(__DIR__).'/Doctrine/Resources/mapping',
+                            'dir' => dirname(dirname(dirname(__DIR__))).'/user/Infra/Doctrine/Resources/mapping',
                             'type' => 'xml',
                             'prefix' => 'MsgPhp\User\Entity',
+                            'is_bundle' => false,
                         ],
                     ],
                 ],

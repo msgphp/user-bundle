@@ -5,7 +5,6 @@ A Symfony bundle for basic user management.
 ## Features
 
 - Symfony 3.4 / 4.0 ready
-- Event / command driven
 - E-mail / password based authentication
 - User registration / E-mail confirmation
 - Forgot password / Reset password / Change password

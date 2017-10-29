@@ -6,11 +6,10 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\User\Command\Handler\{AddUserRoleHandler, AddUserSecondaryEmailHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
-use MsgPhp\User\Entity\{PendingUser, User, UserRole, UserSecondaryEmail};
+use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
-use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
 use MsgPhp\User\Infra\Validator\EmailLookupInterface;
 use MsgPhp\User\UserFactory;
 use MsgPhp\User\UserIdInterface;
@@ -24,14 +23,13 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
-use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
  */
-final class Extension extends BaseExtension implements PrependExtensionInterface
+final class Extension extends BaseExtension
 {
     public function getAlias(): string
     {
@@ -55,6 +53,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ->setArgument('$classMapping', [
                 PendingUser::class => $config['pending_user_class'],
                 User::class => $config['user_class'],
+                UserAttributeValue::class => $config['user_attribute_value_class'],
                 UserIdInterface::class => $config['user_id_class'],
                 UserRole::class => $config['user_role_class'],
                 UserSecondaryEmail::class => $config['user_secondary_email_class'],
@@ -137,36 +136,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             if (!$container->has(EmailLookupInterface::class) && $container->has(SqlEmailLookup::class)) {
                 $container->setAlias(EmailLookupInterface::class, new Alias(SqlEmailLookup::class, false));
             }
-        }
-    }
-
-    public function prepend(ContainerBuilder $container)
-    {
-        $configs = $container->getExtensionConfig($this->getAlias());
-        $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
-        $bundles = array_flip($container->getParameter('kernel.bundles'));
-
-        if (isset($bundles[DoctrineBundle::class])) {
-            $container->prependExtensionConfig('doctrine', [
-                'dbal' => [
-                    'types' => [
-                        UserIdType::NAME => $config['doctrine']['user_id_type_class'],
-                    ],
-                ],
-                'orm' => [
-                    'resolve_target_entities' => [
-                        User::class => $config['user_class'],
-                    ],
-                    'mappings' => [
-                        'MsgPhp\User\Entity' => [
-                            'dir' => dirname(dirname(dirname(__DIR__))).'/user/Infra/Doctrine/Resources/mapping',
-                            'type' => 'xml',
-                            'prefix' => 'MsgPhp\User\Entity',
-                            'is_bundle' => false,
-                        ],
-                    ],
-                ],
-            ]);
         }
     }
 }

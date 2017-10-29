@@ -8,6 +8,6 @@ return function (ContainerConfigurator $container) {
             ->autowire()
             ->autoconfigure()
             ->private()
-        ->load('MsgPhp\\User\\Infra\\Console\\Command\\', dirname(dirname(dirname(dirname(__DIR__)))).'/user/Infra/Console/Command')
+        ->load('MsgPhp\\User\\Infra\\Console\\Command\\', '%kernel.project_dir%/vendor/msgphp/user/Infra/Console/Command')
     ;
 };

@@ -10,7 +10,7 @@ return function (ContainerConfigurator $container) {
         ->defaults()
             ->autowire()
             ->private()
-        ->load('MsgPhp\\User\\Infra\\Doctrine\\Repository\\', dirname(dirname(dirname(dirname(__DIR__)))).'/user/Infra/Doctrine/Repository')
+        ->load('MsgPhp\\User\\Infra\\Doctrine\\Repository\\', '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Repository')
         ->set(SqlEmailLookup::class)
         ->alias(PendingUserRepositoryInterface::class, PendingUserRepository::class)
         ->alias(UserRepositoryInterface::class, UserRepository::class)

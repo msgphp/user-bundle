@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use MsgPhp\Domain\Infra\Bundle\ServiceConfigHelper;
+use MsgPhp\Eav\{AttributeIdInterface, AttributeValueIdInterface};
+use MsgPhp\Eav\Entity\{Attribute, AttributeValue};
+use MsgPhp\Eav\Infra\Uuid\AttributeValueId;
 use MsgPhp\User\Command\Handler\{AddUserRoleHandler, AddUserSecondaryEmailHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
 use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
+use MsgPhp\User\Infra\Uuid\UserId;
 use MsgPhp\User\Infra\Validator\EmailLookupInterface;
-use MsgPhp\User\UserFactory;
 use MsgPhp\User\UserIdInterface;
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -44,30 +48,26 @@ final class Extension extends BaseExtension
     public function load(array $configs, ContainerBuilder $container)
     {
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
+        $classMapping = $config['class_mapping'];
+
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $bundles = array_flip($container->getParameter('kernel.bundles'));
 
-        $loader->load('domain.php');
-
-        $container->getDefinition(UserFactory::class)
-            ->setArgument('$classMapping', [
-                PendingUser::class => $config['pending_user_class'],
-                User::class => $config['user_class'],
-                UserAttributeValue::class => $config['user_attribute_value_class'],
-                UserIdInterface::class => $config['user_id_class'],
-                UserRole::class => $config['user_role_class'],
-                UserSecondaryEmail::class => $config['user_secondary_email_class'],
-            ])
-        ;
+        ServiceConfigHelper::configureEntityFactory($container, $classMapping, [
+            Attribute::class => AttributeIdInterface::class,
+            AttributeValue::class => AttributeValueIdInterface::class,
+            User::class => UserIdInterface::class,
+            UserAttributeValue::class => AttributeValueIdInterface::class,
+        ]);
 
         if (isset($bundles[FrameworkBundle::class]) && class_exists(Application::class)) {
             $loader->load('console.php');
 
-            if (null === $config['pending_user_class']) {
+            if (!isset($classMapping[PendingUser::class])) {
                 $container->removeDefinition(CreatePendingUserCommand::class);
             }
 
-            if (null === $config['user_role_class']) {
+            if (!isset($classMapping[UserRole::class])) {
                 $container->removeDefinition(AddUserRoleCommand::class);
                 $container->removeDefinition(DeleteUserRoleCommand::class);
             }
@@ -77,10 +77,10 @@ final class Extension extends BaseExtension
             $loader->load('doctrine.php');
 
             foreach ([
-                PendingUserRepository::class => $config['pending_user_class'],
-                UserRepository::class => $config['user_class'],
-                UserRoleRepository::class => $config['user_role_class'],
-                UserSecondaryEmailRepository::class => $config['user_secondary_email_class'],
+                PendingUserRepository::class => $classMapping[PendingUser::class] ?? null,
+                UserRepository::class => $classMapping[User::class] ?? null,
+                UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
+                UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
             ] as $repository => $class) {
                 if (null === $class) {
                     $container->removeDefinition($repository);
@@ -95,8 +95,8 @@ final class Extension extends BaseExtension
             }
 
             $container->getDefinition(SqlEmailLookup::class)
-                ->setArgument('$primaryEntity', $config['user_class'])
-                ->setArgument('$subEntities', array_filter([$config['pending_user_class'], $config['user_secondary_email_class']]))
+                ->setArgument('$primaryEntity', $classMapping[User::class])
+                ->setArgument('$subEntities', array_filter([$classMapping[PendingUser::class] ?? null, $classMapping[UserSecondaryEmail::class] ?? null]))
             ;
         }
 
@@ -105,19 +105,21 @@ final class Extension extends BaseExtension
         }
 
         if (isset($bundles[SimpleBusCommandBusBundle::class])) {
+            ServiceConfigHelper::configureSimpleBus($container);
+
             $loader->load('simplebus.php');
 
-            if (null === $config['pending_user_class']) {
+            if (!isset($classMapping[PendingUser::class])) {
                 $container->removeDefinition(ConfirmPendingUserHandler::class);
                 $container->removeDefinition(CreatePendingUserHandler::class);
             }
 
-            if (null === $config['user_role_class']) {
+            if (!isset($classMapping[UserRole::class])) {
                 $container->removeDefinition(AddUserRoleHandler::class);
                 $container->removeDefinition(DeleteUserRoleHandler::class);
             }
 
-            if (null === $config['user_secondary_email_class']) {
+            if (!isset($classMapping[UserSecondaryEmail::class])) {
                 $container->removeDefinition(AddUserSecondaryEmailHandler::class);
                 $container->removeDefinition(ConfirmUserSecondaryEmailHandler::class);
                 $container->removeDefinition(DeleteUserSecondaryEmailHandler::class);

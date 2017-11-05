@@ -1,9 +1,6 @@
 <?php
 
-use MsgPhp\Domain\Infra\Bundle\ServiceConfigHelper;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-
-ServiceConfigHelper::configureSimpleBus($container);
 
 return function (ContainerConfigurator $container) {
     $services = $container->services()

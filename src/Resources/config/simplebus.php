@@ -2,14 +2,16 @@
 
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-return function (ContainerConfigurator $container) {
+$handlers = $container->getParameter('kernel.project_dir').'/vendor/msgphp/user/Command/Handler/*Handler.php';
+
+return function (ContainerConfigurator $container) use ($handlers) {
     $services = $container->services()
         ->defaults()
             ->autowire()
             ->public()
     ;
 
-    foreach (glob(dirname(dirname(dirname(dirname(__DIR__)))).'/user/Command/Handler/*Handler.php') as $file) {
+    foreach (glob($handlers) as $file) {
         $handler = 'MsgPhp\\User\\Command\\Handler\\'.basename($file, '.php');
         $command = 'MsgPhp\\User\\Command\\'.basename($file, 'Handler.php').'Command';
 

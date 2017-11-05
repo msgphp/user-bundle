@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use MsgPhp\Eav\{AttributeIdInterface, AttributeValueIdInterface};
-use MsgPhp\Eav\Infra\Uuid\{AttributeId, AttributeValueId};
 use MsgPhp\User\Entity\User;
 use MsgPhp\User\Infra\Uuid\UserId;
 use MsgPhp\User\UserIdInterface;
@@ -37,8 +35,6 @@ final class Configuration implements ConfigurationInterface
                         ->always()
                         ->then(function (array $value) {
                             return $value + [
-                                AttributeIdInterface::class => AttributeId::class,
-                                AttributeValueIdInterface::class => AttributeValueId::class,
                                 UserIdInterface::class => UserId::class,
                             ];
                         })

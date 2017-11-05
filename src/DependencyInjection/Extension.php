@@ -6,15 +6,11 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\Infra\Bundle\ServiceConfigHelper;
-use MsgPhp\Eav\{AttributeIdInterface, AttributeValueIdInterface};
-use MsgPhp\Eav\Entity\{Attribute, AttributeValue};
-use MsgPhp\Eav\Infra\Uuid\AttributeValueId;
 use MsgPhp\User\Command\Handler\{AddUserRoleHandler, AddUserSecondaryEmailHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
 use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
-use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
+use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
-use MsgPhp\User\Infra\Uuid\UserId;
 use MsgPhp\User\Infra\Validator\EmailLookupInterface;
 use MsgPhp\User\UserIdInterface;
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
@@ -54,10 +50,7 @@ final class Extension extends BaseExtension
         $bundles = array_flip($container->getParameter('kernel.bundles'));
 
         ServiceConfigHelper::configureEntityFactory($container, $classMapping, [
-            Attribute::class => AttributeIdInterface::class,
-            AttributeValue::class => AttributeValueIdInterface::class,
             User::class => UserIdInterface::class,
-            UserAttributeValue::class => AttributeValueIdInterface::class,
         ]);
 
         if (isset($bundles[FrameworkBundle::class]) && class_exists(Application::class)) {
@@ -78,7 +71,8 @@ final class Extension extends BaseExtension
 
             foreach ([
                 PendingUserRepository::class => $classMapping[PendingUser::class] ?? null,
-                UserRepository::class => $classMapping[User::class] ?? null,
+                UserRepository::class => $classMapping[User::class],
+                UserAttributeValueRepository::class => $classMapping[UserAttributeValue::class] ?? null,
                 UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
                 UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
             ] as $repository => $class) {

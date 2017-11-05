@@ -22,7 +22,7 @@
         "symfony/http-kernel": "^3.4|^4.0"
     },
     "suggest": {
-        "msgphp/eav": "To enable user attributes"
+        "msgphp/eav-bundle": "To enable user attributes"
     },
     "config": {
         "preferred-install": {

@@ -13,12 +13,13 @@ use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeV
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
 use MsgPhp\User\Infra\Validator\EmailLookupInterface;
 use MsgPhp\User\UserIdInterface;
-use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
+use SimpleBus\SymfonyBridge\{SimpleBusCommandBusBundle, SimpleBusEventBusBundle};
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -31,9 +32,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 final class Extension extends BaseExtension
 {
+    public const ALIAS = 'msgphp_user';
+
     public function getAlias(): string
     {
-        return 'msgphp_user';
+        return self::ALIAS;
     }
 
     public function getConfiguration(array $config, ContainerBuilder $container): ConfigurationInterface
@@ -53,7 +56,38 @@ final class Extension extends BaseExtension
             User::class => UserIdInterface::class,
         ]);
 
-        if (isset($bundles[FrameworkBundle::class]) && class_exists(Application::class)) {
+        if (isset($bundles[FrameworkBundle::class])) {
+            $this->prepareFrameworkBundle($config, $loader, $container);
+        }
+
+        if (isset($bundles[DoctrineBundle::class])) {
+            $this->prepareDoctrineBundle($config, $loader, $container);
+        }
+
+        if (isset($bundles[SecurityBundle::class])) {
+            $loader->load('security.php');
+        }
+
+        if (isset($bundles[SimpleBusCommandBusBundle::class])) {
+            ServiceConfigHelper::configureSimpleCommandBus($container);
+
+            $this->prepareSimpleBusCommandBusBundle($config, $loader, $container);
+        }
+
+        if (isset($bundles[SimpleBusEventBusBundle::class])) {
+            ServiceConfigHelper::configureSimpleEventBus($container);
+        }
+
+        if (isset($bundles[TwigBundle::class])) {
+            $loader->load('twig.php');
+        }
+    }
+
+    private function prepareFrameworkBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $classMapping = $config['class_mapping'];
+
+        if (class_exists(Application::class)) {
             $loader->load('console.php');
 
             if (!isset($classMapping[PendingUser::class])) {
@@ -66,72 +100,74 @@ final class Extension extends BaseExtension
             }
         }
 
-        if (isset($bundles[DoctrineBundle::class])) {
-            $loader->load('doctrine.php');
-
-            foreach ([
-                PendingUserRepository::class => $classMapping[PendingUser::class] ?? null,
-                UserRepository::class => $classMapping[User::class],
-                UserAttributeValueRepository::class => $classMapping[UserAttributeValue::class] ?? null,
-                UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
-                UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
-            ] as $repository => $class) {
-                if (null === $class) {
-                    $container->removeDefinition($repository);
-                    foreach ($container->getAliases() as $id => $alias) {
-                        if ((string) $alias === $repository) {
-                            $container->removeAlias($id);
-                        }
-                    }
-                } else {
-                    $container->getDefinition($repository)->setArgument('$class', $class);
-                }
-            }
-
-            $container->getDefinition(SqlEmailLookup::class)
-                ->setArgument('$primaryEntity', $classMapping[User::class])
-                ->setArgument('$subEntities', array_filter([$classMapping[PendingUser::class] ?? null, $classMapping[UserSecondaryEmail::class] ?? null]))
-            ;
-        }
-
-        if (isset($bundles[SecurityBundle::class])) {
-            $loader->load('security.php');
-        }
-
-        if (isset($bundles[SimpleBusCommandBusBundle::class])) {
-            ServiceConfigHelper::configureSimpleBus($container);
-
-            $loader->load('simplebus.php');
-
-            if (!isset($classMapping[PendingUser::class])) {
-                $container->removeDefinition(ConfirmPendingUserHandler::class);
-                $container->removeDefinition(CreatePendingUserHandler::class);
-            }
-
-            if (!isset($classMapping[UserRole::class])) {
-                $container->removeDefinition(AddUserRoleHandler::class);
-                $container->removeDefinition(DeleteUserRoleHandler::class);
-            }
-
-            if (!isset($classMapping[UserSecondaryEmail::class])) {
-                $container->removeDefinition(AddUserSecondaryEmailHandler::class);
-                $container->removeDefinition(ConfirmUserSecondaryEmailHandler::class);
-                $container->removeDefinition(DeleteUserSecondaryEmailHandler::class);
-                $container->removeDefinition(MarkUserSecondaryEmailPrimaryHandler::class);
-                $container->removeDefinition(SetUserPendingPrimaryEmailHandler::class);
-            }
-        }
-
-        if (isset($bundles[TwigBundle::class])) {
-            $loader->load('twig.php');
-        }
-
-        if (isset($bundles[FrameworkBundle::class]) && interface_exists(ValidatorInterface::class)) {
+        if (interface_exists(ValidatorInterface::class)) {
             $loader->load('validator.php');
+        }
+    }
 
-            if (!$container->has(EmailLookupInterface::class) && $container->has(SqlEmailLookup::class)) {
-                $container->setAlias(EmailLookupInterface::class, new Alias(SqlEmailLookup::class, false));
+    private function prepareDoctrineBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $loader->load('doctrine.php');
+
+        $classMapping = $config['class_mapping'];
+
+        foreach ([
+            PendingUserRepository::class => $classMapping[PendingUser::class] ?? null,
+            UserRepository::class => $classMapping[User::class],
+            UserAttributeValueRepository::class => $classMapping[UserAttributeValue::class] ?? null,
+            UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
+            UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
+        ] as $repository => $class) {
+            if (null === $class) {
+                $container->removeDefinition($repository);
+            } else {
+                $container->getDefinition($repository)->setArgument('$class', $class);
             }
+        }
+
+        $entityEmailFieldMapping = $primaryEntityEmailFieldMapping = [
+            $classMapping[User::class] => 'email',
+        ];
+
+        if (isset($classMapping[UserSecondaryEmail::class])) {
+            $entityEmailFieldMapping[$classMapping[UserSecondaryEmail::class]] = 'email';
+        }
+
+        if (isset($classMapping[PendingUser::class])) {
+            $entityEmailFieldMapping[$classMapping[PendingUser::class]] = 'email';
+        }
+
+        $container->getDefinition(SqlEmailLookup::class)
+            ->setArgument('$entityFieldMapping', $entityEmailFieldMapping)
+            ->setArgument('$primaryEntityFieldMapping', $primaryEntityEmailFieldMapping);
+
+        if (interface_exists(ValidatorInterface::class)) {
+            $container->setAlias(EmailLookupInterface::class, new Alias(SqlEmailLookup::class, false));
+        }
+    }
+
+    private function prepareSimpleBusCommandBusBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $loader->load('simplebus.php');
+
+        $classMapping = $config['class_mapping'];
+
+        if (!isset($classMapping[PendingUser::class])) {
+            $container->removeDefinition(ConfirmPendingUserHandler::class);
+            $container->removeDefinition(CreatePendingUserHandler::class);
+        }
+
+        if (!isset($classMapping[UserRole::class])) {
+            $container->removeDefinition(AddUserRoleHandler::class);
+            $container->removeDefinition(DeleteUserRoleHandler::class);
+        }
+
+        if (!isset($classMapping[UserSecondaryEmail::class])) {
+            $container->removeDefinition(AddUserSecondaryEmailHandler::class);
+            $container->removeDefinition(ConfirmUserSecondaryEmailHandler::class);
+            $container->removeDefinition(DeleteUserSecondaryEmailHandler::class);
+            $container->removeDefinition(MarkUserSecondaryEmailPrimaryHandler::class);
+            $container->removeDefinition(SetUserPendingPrimaryEmailHandler::class);
         }
     }
 }

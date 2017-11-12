@@ -18,7 +18,7 @@ final class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('msgphp_user');
+        $rootNode = $treeBuilder->root(Extension::ALIAS);
 
         $rootNode
             ->children()

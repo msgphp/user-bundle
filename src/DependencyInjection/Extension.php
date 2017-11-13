@@ -140,10 +140,6 @@ final class Extension extends BaseExtension
         $container->getDefinition(SqlEmailLookup::class)
             ->setArgument('$entityFieldMapping', $entityEmailFieldMapping)
             ->setArgument('$primaryEntityFieldMapping', $primaryEntityEmailFieldMapping);
-
-        if (interface_exists(ValidatorInterface::class)) {
-            $container->setAlias(EmailLookupInterface::class, new Alias(SqlEmailLookup::class, false));
-        }
     }
 
     private function prepareSimpleBusCommandBusBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void

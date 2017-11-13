@@ -1,6 +1,6 @@
 # MsgPhp User Bundle
 
-A Symfony bundle for basic user management.
+A new Symfony bundle for basic user management.
 
 ## Features
 
@@ -12,3 +12,138 @@ A Symfony bundle for basic user management.
 - Disabled / enabled users
 - User roles
 - User attribute values
+
+## Installation
+
+```bash
+$ composer require msgphp/user-bundle
+```
+
+## Configuration
+
+```php
+<?php
+// config/packages/msgphp.php
+
+use MsgPhp\User\Entity\User;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
+return function (ContainerConfigurator $container) {
+    $container->extension('msgphp_user', [
+        'class_mapping' => [
+            User::class => \App\Entity\User::class,
+        ],
+    ]);
+};
+```
+
+And be done.
+
+### Doctrine configuration
+
+If you use [DoctrineBundle](https://github.com/doctrine/DoctrineBundle) configure it as well;
+
+```php
+<?php
+// config/packages/msgphp.php
+
+use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
+
+// ...
+
+$container->extension('doctrine', [
+    'dbal' => [
+        'types' => [
+            UserIdType::NAME => UserIdType::class,
+        ],
+    ],
+    'orm' => [
+        'resolve_target_entities' => [
+            User::class => \App\Entity\User::class,
+         ],
+        'mappings' => [
+            'msgphp_user' => [
+                'dir' => '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Resources/mapping',
+                'type' => 'xml',
+                'prefix' => 'MsgPhp\User\Entity',
+                'is_bundle' => false,
+            ],
+        ],
+    ],
+]);
+```
+
+### Security configuration
+
+If you use [SecurityBundle](https://github.com/symfony/security-bundle) here's a basic setup;
+
+```yaml
+# config/packages/security.yaml
+
+security:
+    encoders:
+        MsgPhp\User\Infra\Security\SecurityUser: bcrypt
+
+    providers:
+         msgphp_user: { id: MsgPhp\User\Infra\Security\SecurityUserProvider }
+
+    firewalls:
+        main:
+            provider: msgphp_user
+            user_checker: MsgPhp\User\Infra\Security\SecurityUserChecker
+            anonymous: ~
+```
+
+In practice the security user is decoupled from your domain entity user. An approach described [here](https://stovepipe.systems/post/decoupling-your-security-user).
+
+- `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
+- `App\Entity\User` extending `MsgPhp\User\Entity\User`
+
+## Usage
+
+### With `FrameworkBundle` + `symfony/console`
+
+Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered.
+
+```bash
+$ bin/console user:create
+```
+
+### With `FrameworkBundle` + `symfony/validator`
+
+Constraint validators from `MsgPhp\User\Infra\Validator\*` are registered.
+
+```php
+<?php
+// @UnqiueEmail()
+private $newEmail;
+
+// @ExistingEmail()
+private $currentEmail;
+```
+
+### With `SimpleBusCommandBusBundle`
+
+Domain command handlers from `MsgPhp\User\Command\Handler\*` are registered.
+
+```php
+<?php
+$messageBus->handle(new DeleteUserCommand($user->getId()));
+```
+
+With `SimpleBusEventBusBundle` corresponding domain events are dispatched.
+
+### With `TwigBundle`
+
+Twig extensions from `MsgPhp\User\Infra\Twig\*` are registered.
+
+```twig
+{% if app.user %} {# the security user: `MsgPhp\User\Infra\Security\SecurityUser` #}
+    <p>Hello {{ msgphp_current_user().email }}</p> {# the domain user: `App\Entity\User` #}
+{% endif %}
+```
+
+### With `DoctrineBundle`
+
+Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered. Corresponding domain interfaces from
+`MsgPhp\User\Repository\*` are aliased.

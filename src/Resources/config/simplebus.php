@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 $handlers = $container->getParameter('kernel.project_dir').'/vendor/msgphp/user/Command/Handler/*Handler.php';
 
-return function (ContainerConfigurator $container) use ($handlers) {
+return function (ContainerConfigurator $container) use ($handlers): void {
     $services = $container->services()
         ->defaults()
             ->autowire()

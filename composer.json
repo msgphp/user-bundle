@@ -21,6 +21,14 @@
         "symfony/dependency-injection": "^3.4|^4.0",
         "symfony/http-kernel": "^3.4|^4.0"
     },
+    "require-dev": {
+        "doctrine/doctrine-bundle": "^1.8",
+        "simple-bus/symfony-bridge": "^4.1",
+        "symfony/framework-bundle": "^3.4|^4.0",
+        "symfony/security-bundle": "^3.4|^4.0",
+        "symfony/twig-bundle": "^3.4|^4.0",
+        "symfony/validator": "^3.4|^4.0"
+    },
     "suggest": {
         "msgphp/eav-bundle": "To enable user attributes"
     },

@@ -11,6 +11,7 @@ use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSec
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
+use MsgPhp\User\Repository\UserRepositoryInterface;
 use MsgPhp\User\UserIdInterface;
 use SimpleBus\SymfonyBridge\{SimpleBusCommandBusBundle, SimpleBusEventBusBundle};
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -111,7 +112,7 @@ final class Extension extends BaseExtension
 
         foreach ([
             PendingUserRepository::class => $classMapping[PendingUser::class] ?? null,
-            UserRepository::class => $classMapping[User::class],
+            UserRepository::class => $classMapping[User::class] ?? User::class,
             UserAttributeValueRepository::class => $classMapping[UserAttributeValue::class] ?? null,
             UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
             UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
@@ -123,9 +124,11 @@ final class Extension extends BaseExtension
             }
         }
 
-        $entityEmailFieldMapping = $primaryEntityEmailFieldMapping = [
-            $classMapping[User::class] => 'email',
-        ];
+        $entityEmailFieldMapping = $primaryEntityEmailFieldMapping = [];
+        if (isset($classMapping[User::class])) {
+            $entityEmailFieldMapping[User::class] = 'email';
+            $primaryEntityEmailFieldMapping[User::class] = 'email';
+        }
 
         if (isset($classMapping[UserSecondaryEmail::class])) {
             $entityEmailFieldMapping[$classMapping[UserSecondaryEmail::class]] = 'email';

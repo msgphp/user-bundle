@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserRepository, UserAttributeValueRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
 use MsgPhp\User\Infra\Validator\EmailLookupInterface;
 use MsgPhp\User\Repository\{PendingUserRepositoryInterface, UserRepositoryInterface, UserAttributeValueRepositoryInterface, UserRoleRepositoryInterface, UserSecondaryEmailRepositoryInterface};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-return function (ContainerConfigurator $container) {
+return function (ContainerConfigurator $container): void {
     $container->services()
         ->defaults()
             ->autowire()

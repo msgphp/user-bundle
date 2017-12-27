@@ -28,7 +28,9 @@ final class Configuration implements ConfigurationInterface
                         ->cannotBeEmpty()
                     ->end()
                     ->validate()
-                        ->ifTrue(function (array $value) { return !isset($value[User::class]); })
+                        ->ifTrue(function (array $value) {
+                            return !isset($value[User::class]);
+                        })
                         ->thenInvalid(sprintf('Class "%s" must be configured', User::class))
                     ->end()
                     ->validate()

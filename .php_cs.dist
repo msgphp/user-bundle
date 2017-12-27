@@ -1,0 +1,21 @@
+<?php
+
+use PhpCsFixer\Config;
+use PhpCsFixer\Finder;
+
+$rules = [
+    '@PSR2' => true,
+    '@Symfony' => true,
+    '@Symfony:risky' => true,
+    '@PHP70Migration' => true,
+    '@PHP70Migration:risky' => true,
+    '@PHP71Migration' => true,
+    '@PHP71Migration:risky' => true,
+    'single_import_per_statement' => false,
+];
+
+return Config::create()->setRules($rules)
+    ->setFinder(Finder::create()->in(__DIR__))
+    ->setUsingCache(true)
+    ->setRiskyAllowed(true)
+;

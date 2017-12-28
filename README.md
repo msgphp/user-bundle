@@ -39,40 +39,6 @@ return function (ContainerConfigurator $container) {
 
 And be done.
 
-### Doctrine configuration
-
-If you use [DoctrineBundle](https://github.com/doctrine/DoctrineBundle) configure it as well;
-
-```php
-<?php
-// config/packages/msgphp.php
-
-use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
-
-// ...
-
-$container->extension('doctrine', [
-    'dbal' => [
-        'types' => [
-            UserIdType::NAME => UserIdType::class,
-        ],
-    ],
-    'orm' => [
-        'resolve_target_entities' => [
-            User::class => \App\Entity\User::class,
-         ],
-        'mappings' => [
-            'msgphp_user' => [
-                'dir' => '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Resources/mapping',
-                'type' => 'xml',
-                'prefix' => 'MsgPhp\User\Entity',
-                'is_bundle' => false,
-            ],
-        ],
-    ],
-]);
-```
-
 ### Security configuration
 
 If you use [SecurityBundle](https://github.com/symfony/security-bundle) here's a basic setup;

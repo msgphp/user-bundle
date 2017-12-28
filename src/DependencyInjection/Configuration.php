@@ -24,6 +24,7 @@ final class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->arrayNode('class_mapping')
+                    ->isRequired()
                     ->useAttributeAsKey('class')
                     ->scalarPrototype()
                         ->cannotBeEmpty()

@@ -7,15 +7,18 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\CommandBusInterface;
 use MsgPhp\Domain\Infra\Bundle\ServiceConfigHelper;
+use MsgPhp\Domain\Infra\Uuid\DomainId;
 use MsgPhp\User\Command\Handler\{AddUserRoleHandler, AddUserSecondaryEmailHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
 use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
+use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
 use MsgPhp\User\Infra\Security\NativeBcryptPasswordEncoder;
 use MsgPhp\User\PasswordEncoderInterface;
 use MsgPhp\User\Repository\UserRepositoryInterface;
 use MsgPhp\User\UserIdInterface;
+use Ramsey\Uuid\Uuid;
 use SimpleBus\SymfonyBridge\{SimpleBusCommandBusBundle, SimpleBusEventBusBundle};
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -27,13 +30,14 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
  */
-final class Extension extends BaseExtension
+final class Extension extends BaseExtension implements PrependExtensionInterface
 {
     public const ALIAS = 'msgphp_user';
 
@@ -49,16 +53,10 @@ final class Extension extends BaseExtension
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
-        $classMapping = $config['class_mapping'];
-
-        if (!$classMapping) {
-            // un-configured bundle
-            return;
-        }
-
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
+        $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
         $bundles = array_flip($container->getParameter('kernel.bundles'));
+        $classMapping = $config['class_mapping'];
 
         ServiceConfigHelper::configureEntityFactory($container, $classMapping, [
             User::class => UserIdInterface::class,
@@ -97,6 +95,44 @@ final class Extension extends BaseExtension
         if (!$container->has(PasswordEncoderInterface::class)) {
             $container->register(NativeBcryptPasswordEncoder::class);
             $container->setAlias(PasswordEncoderInterface::class, new Alias(NativeBcryptPasswordEncoder::class, false));
+        }
+    }
+
+    public function prepend(ContainerBuilder $container): void
+    {
+        $config = $this->processConfiguration($this->getConfiguration($configs = $container->getExtensionConfig($this->getAlias()), $container), $configs);
+        $bundles = array_flip($container->getParameter('kernel.bundles'));
+        $classMapping = $config['class_mapping'];
+
+        if (isset($bundles[DoctrineBundle::class])) {
+            $container->prependExtensionConfig('doctrine', [
+                'orm' => [
+                    'resolve_target_entities' => $classMapping,
+                    'mappings' => [
+                        'msgphp_user' => [
+                            'dir' => '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Resources/mapping',
+                            'type' => 'xml',
+                            'prefix' => 'MsgPhp\\User\\Entity',
+                            'is_bundle' => false,
+                        ],
+                    ],
+                ],
+            ]);
+
+            if (class_exists(Uuid::class)) {
+                $types = [];
+                if (is_subclass_of($classMapping[UserIdInterface::class], DomainId::class)) {
+                    $types[UserIdType::NAME] = UserIdType::class;
+                }
+
+                if ($types) {
+                    $container->prependExtensionConfig('doctrine', [
+                        'dbal' => [
+                            'types' => $types,
+                        ],
+                    ]);
+                }
+            }
         }
     }
 

@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+/** @var ContainerBuilder $container */
 $handlers = $container->getParameter('kernel.project_dir').'/vendor/msgphp/user/Command/Handler/*Handler.php';
 
 return function (ContainerConfigurator $container) use ($handlers): void {

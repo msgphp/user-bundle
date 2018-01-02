@@ -6,7 +6,7 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\CommandBusInterface;
-use MsgPhp\Domain\Infra\DependencyInjection\BundleServiceConfigHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
 use MsgPhp\Domain\Infra\Doctrine\Mapping\EntityFields as BaseEntityFields;
 use MsgPhp\Domain\Infra\Uuid\DomainId;
 use MsgPhp\User\Command\Handler\{AddUserRoleHandler, AddUserSecondaryEmailHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
@@ -59,12 +59,12 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $bundles = array_flip($container->getParameter('kernel.bundles'));
         $classMapping = $config['class_mapping'];
 
-        BundleServiceConfigHelper::configureEntityFactory($container, $classMapping, [
+        ContainerHelper::configureEntityFactory($container, $classMapping, [
             User::class => UserIdInterface::class,
         ]);
 
         if (isset($bundles[DoctrineBundle::class])) {
-            BundleServiceConfigHelper::configureDoctrineObjectFieldMapping($container, BaseEntityFields::class);
+            ContainerHelper::configureDoctrineObjectFieldMapping($container, BaseEntityFields::class);
 
             $this->prepareDoctrineBundle($config, $loader, $container);
         }
@@ -74,13 +74,13 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         if (isset($bundles[SimpleBusCommandBusBundle::class])) {
-            BundleServiceConfigHelper::configureSimpleCommandBus($container);
+            ContainerHelper::configureSimpleCommandBus($container);
 
             $this->prepareSimpleBusCommandBusBundle($config, $loader, $container);
         }
 
         if (isset($bundles[SimpleBusEventBusBundle::class])) {
-            BundleServiceConfigHelper::configureSimpleEventBus($container);
+            ContainerHelper::configureSimpleEventBus($container);
         }
 
         if (isset($bundles[FrameworkBundle::class])) {

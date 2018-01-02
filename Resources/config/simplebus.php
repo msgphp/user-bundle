@@ -6,6 +6,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /** @var ContainerBuilder $container */
+$container = $container ?? (function (): ContainerBuilder { throw new \LogicException('Invalid context.'); })();
 $handlers = $container->getParameter('kernel.project_dir').'/vendor/msgphp/user/Command/Handler/*Handler.php';
 
 return function (ContainerConfigurator $container) use ($handlers): void {
@@ -19,8 +20,6 @@ return function (ContainerConfigurator $container) use ($handlers): void {
         $handler = 'MsgPhp\\User\\Command\\Handler\\'.basename($file, '.php');
         $command = 'MsgPhp\\User\\Command\\'.basename($file, 'Handler.php').'Command';
 
-        $services->set($handler)
-            ->tag('command_handler', ['handles' => $command])
-        ;
+        $services->set($handler)->tag('command_handler', ['handles' => $command]);
     }
 };

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
+use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ConfigHelper;
 use MsgPhp\User\Entity\User;
 use MsgPhp\User\Infra\Uuid\UserId;
 use MsgPhp\User\UserIdInterface;
@@ -19,43 +20,20 @@ final class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root(Extension::ALIAS);
 
-        $rootNode
-            ->children()
-                ->arrayNode('class_mapping')
-                    ->isRequired()
-                    ->useAttributeAsKey('class')
-                    ->scalarPrototype()
-                        ->cannotBeEmpty()
-                    ->end()
-                    ->validate()
-                        ->always()
-                        ->then(function (array $value) {
-                            if (class_exists(Uuid::class)) {
-                                $value += [
-                                    UserIdInterface::class => UserId::class,
-                                ];
-                            }
+        $treeBuilder->root(Extension::ALIAS)
+            ->append(ConfigHelper::createClassMappingNode('class_mapping', [
+                User::class,
+                UserIdInterface::class => 'Try `composer require ramsey/uuid`',
+            ], function (array $value): array {
+                if (class_exists(Uuid::class)) {
+                    $value += [
+                        UserIdInterface::class => UserId::class,
+                    ];
+                }
 
-                            return $value;
-                        })
-                    ->end()
-                    ->validate()
-                        ->ifTrue(function (array $value) {
-                            return !isset($value[User::class]);
-                        })
-                        ->thenInvalid(sprintf('Class "%s" must be configured', User::class))
-                    ->end()
-                    ->validate()
-                        ->ifTrue(function (array $value) {
-                            return !isset($value[UserIdInterface::class]);
-                        })
-                        ->thenInvalid(sprintf('Class "%s" must be configured. Try `composer require ramsey/uuid`', UserIdInterface::class))
-                    ->end()
-                ->end()
-            ->end()
-        ;
+                return $value;
+            }));
 
         return $treeBuilder;
     }

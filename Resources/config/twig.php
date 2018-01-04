@@ -11,6 +11,7 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->autoconfigure()
             ->private()
+
         ->set(UserExtension::class)
     ;
 };

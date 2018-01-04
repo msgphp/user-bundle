@@ -12,6 +12,7 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->autoconfigure()
             ->private()
+
         ->set(ExistingEmailValidator::class)
         ->set(UniqueEmailValidator::class)
     ;

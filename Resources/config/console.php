@@ -10,6 +10,7 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->autoconfigure()
             ->private()
+
         ->load('MsgPhp\\User\\Infra\\Console\\Command\\', '%kernel.project_dir%/vendor/msgphp/user/Infra/Console/Command')
     ;
 };

@@ -13,6 +13,7 @@ return function (ContainerConfigurator $container): void {
         ->defaults()
             ->autowire()
             ->private()
+
         ->set(PasswordHashing::class)
             ->args([
                 inline(SymfonyPasswordEncoderInterface::class)
@@ -20,6 +21,7 @@ return function (ContainerConfigurator $container): void {
                     ->args([SecurityUser::class]),
             ])
         ->alias(PasswordHashingInterface::class, PasswordHashing::class)
+
         ->set(SecurityUserFactory::class)
         ->set(SecurityUserProvider::class)
     ;

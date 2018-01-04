@@ -43,9 +43,36 @@ return function (ContainerConfigurator $container) {
 
 And be done.
 
-### Security configuration
+## Usage
 
-If you use [SecurityBundle](https://github.com/symfony/security-bundle) here's a basic setup;
+### With `FrameworkBundle` + `symfony/console`
+
+Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
+
+```bash
+bin/console user:create
+```
+
+- Requires `DoctrineBundle` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias.
+
+### With `FrameworkBundle` + `symfony/validator`
+
+Constraint validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.
+
+```php
+<?php
+// @UnqiueEmail()
+private $newEmail;
+
+// @ExistingEmail()
+private $currentEmail;
+```
+
+- Requires `DoctrineBundle` or a `MsgPhp\User\Infra\Validator\EmailLookupInterface` service/alias.
+
+### With `SecurityBundle`
+
+Minimal configuration:
 
 ```yaml
 # config/packages/security.yaml
@@ -63,48 +90,28 @@ security:
             anonymous: ~
 ```
 
-In practice the security user is decoupled from your domain entity user. An approach described [here](https://stovepipe.systems/post/decoupling-your-security-user).
+- Requires `DoctrineBundle` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias.
+
+In practice the security user is decoupled from your domain entity user. An approach described
+[here](https://stovepipe.systems/post/decoupling-your-security-user).
 
 - `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
-- `App\Entity\User` extending `MsgPhp\User\Entity\User`
-
-## Usage
-
-### With `FrameworkBundle` + `symfony/console`
-
-Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered.
-
-```bash
-bin/console user:create
-```
-
-### With `FrameworkBundle` + `symfony/validator`
-
-Constraint validators from `MsgPhp\User\Infra\Validator\*` are registered.
-
-```php
-<?php
-// @UnqiueEmail()
-private $newEmail;
-
-// @ExistingEmail()
-private $currentEmail;
-```
+- `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
 
 ### With `SimpleBusCommandBusBundle`
 
-Domain command handlers from `MsgPhp\User\Command\Handler\*` are registered.
+Domain command handlers from `MsgPhp\User\Command\Handler\*` are registered as a service.
 
 ```php
 <?php
 $messageBus->handle(new DeleteUserCommand($user->getId()));
 ```
-
-With `SimpleBusEventBusBundle` corresponding domain events are dispatched.
+- Requires `DoctrineBundle` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias.
+- With `SimpleBusEventBusBundle` corresponding domain events are dispatched.
 
 ### With `TwigBundle`
 
-Twig extensions from `MsgPhp\User\Infra\Twig\*` are registered.
+Twig extensions from `MsgPhp\User\Infra\Twig\*` are registered as a service.
 
 ```twig
 {% if app.user %} {# the security user: `MsgPhp\User\Infra\Security\SecurityUser` #}
@@ -114,9 +121,10 @@ Twig extensions from `MsgPhp\User\Infra\Twig\*` are registered.
 
 ### With `DoctrineBundle`
 
-Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered. Corresponding domain interfaces from
-`MsgPhp\User\Repository\*` are aliased.
+Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered as a service. Corresponding domain interfaces
+from  `MsgPhp\User\Repository\*` are aliased.
 
 ## Contributing
 
-This repository is **READ ONLY**. Issues and pull requests should be submitted in the [main development repository](https://github.com/msgphp/msgphp).
+This repository is **READ ONLY**. Issues and pull requests should be submitted in the
+[main development repository](https://github.com/msgphp/msgphp).

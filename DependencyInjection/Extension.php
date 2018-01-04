@@ -15,8 +15,7 @@ use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserComm
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
 use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
-use MsgPhp\User\Infra\Security\NativeBcryptPasswordEncoder;
-use MsgPhp\User\PasswordEncoderInterface;
+use MsgPhp\User\Password\{PasswordHashing, PasswordHashingInterface};
 use MsgPhp\User\Repository\UserRepositoryInterface;
 use MsgPhp\User\UserIdInterface;
 use Ramsey\Uuid\Uuid;
@@ -56,7 +55,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
-        $bundles = array_flip($container->getParameter('kernel.bundles'));
+        $bundles = ContainerHelper::getBundles($container);
         $classMapping = $config['class_mapping'];
 
         ContainerHelper::configureEntityFactory($container, $classMapping, [
@@ -95,9 +94,9 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $loader->load('twig.php');
         }
 
-        if (!$container->has(PasswordEncoderInterface::class)) {
-            $container->register(NativeBcryptPasswordEncoder::class);
-            $container->setAlias(PasswordEncoderInterface::class, new Alias(NativeBcryptPasswordEncoder::class, false));
+        if (!$container->has(PasswordHashingInterface::class)) {
+            $container->register(PasswordHashing::class);
+            $container->setAlias(PasswordHashingInterface::class, new Alias(PasswordHashing::class, false));
         }
     }
 

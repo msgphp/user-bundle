@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace MsgPhp;
+
 use MsgPhp\User\Password\PasswordHashingInterface;
 use MsgPhp\User\Infra\Security\{PasswordHashing, SecurityUser, SecurityUserFactory, SecurityUserProvider};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

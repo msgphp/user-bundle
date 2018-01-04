@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace MsgPhp;
+
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

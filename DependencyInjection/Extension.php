@@ -58,6 +58,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $bundles = ContainerHelper::getBundles($container);
         $classMapping = $config['class_mapping'];
 
+        $loader->load('services.php');
+
         ContainerHelper::configureEntityFactory($container, $classMapping, [
             User::class => UserIdInterface::class,
         ]);
@@ -69,6 +71,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         if (!$container->has(UserRepositoryInterface::class)) {
+            // @fixme per case conditional; validator.php depends on EmailLookupInterface, not a repo per see
             return;
         }
 
@@ -92,11 +95,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (isset($bundles[TwigBundle::class])) {
             $loader->load('twig.php');
-        }
-
-        if (!$container->has(PasswordHashingInterface::class)) {
-            $container->register(PasswordHashing::class);
-            $container->setAlias(PasswordHashingInterface::class, new Alias(PasswordHashing::class, false));
         }
     }
 
@@ -143,7 +141,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $classMapping = $config['class_mapping'];
 
         if (interface_exists(ValidatorInterface::class)) {
-            $loader->load('validator.php');
+            $loader->load('validator.php'); // @fi
         }
 
         if (class_exists(Application::class) && $container->has(CommandBusInterface::class)) {

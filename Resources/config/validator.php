@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp;
 
-use MsgPhp\User\Infra\Validator\ExistingEmailValidator;
-use MsgPhp\User\Infra\Validator\UniqueEmailValidator;
+use MsgPhp\User\Infra\Validator\{ExistingEmailValidator, UniqueEmailValidator};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return function (ContainerConfigurator $container): void {

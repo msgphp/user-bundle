@@ -5,21 +5,22 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\CommandBusInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
-use MsgPhp\Domain\Infra\Doctrine\Mapping\EntityFields as BaseEntityFields;
 use MsgPhp\Domain\Infra\Uuid\DomainId;
-use MsgPhp\User\Command\Handler\{AddUserRoleHandler, AddUserSecondaryEmailHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
+use MsgPhp\EavBundle\MsgPhpEavBundle;
+use MsgPhp\User\Command\Handler\{AddUserAttributeValueHandler, AddUserRoleHandler, AddUserSecondaryEmailHandler, ChangeUserAttributeValueHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserAttributeValueHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
 use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
 use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
-use MsgPhp\User\Password\{PasswordHashing, PasswordHashingInterface};
-use MsgPhp\User\Repository\UserRepositoryInterface;
+use MsgPhp\User\Infra\Validator\{EmailLookupInterface, ExistingEmailValidator, UniqueEmailValidator};
+use MsgPhp\User\Repository\{PendingUserRepositoryInterface, UserAttributeValueRepositoryInterface, UserRepositoryInterface, UserRoleRepositoryInterface, UserSecondaryEmailRepositoryInterface};
 use MsgPhp\User\UserIdInterface;
 use Ramsey\Uuid\Uuid;
-use SimpleBus\SymfonyBridge\{SimpleBusCommandBusBundle, SimpleBusEventBusBundle};
+use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -27,7 +28,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Console\Application;
-use Symfony\Component\DependencyInjection\Alias;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
@@ -63,28 +63,20 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         ContainerHelper::configureEntityFactory($container, $classMapping, [
             User::class => UserIdInterface::class,
         ]);
+        ContainerHelper::configureDoctrine($container);
+        ContainerHelper::configureSimpleBus($container);
 
+        // persistence infra
         if (isset($bundles[DoctrineBundle::class])) {
-            ContainerHelper::configureDoctrineObjectFieldMapping($container, BaseEntityFields::class);
-
             $this->prepareDoctrineBundle($config, $loader, $container);
         }
 
-        if (!$container->has(UserRepositoryInterface::class)) {
-            // @fixme per case conditional; validator.php depends on EmailLookupInterface, not a repo per see
-            return;
-        }
-
+        // message infra
         if (isset($bundles[SimpleBusCommandBusBundle::class])) {
-            ContainerHelper::configureSimpleCommandBus($container);
-
             $this->prepareSimpleBusCommandBusBundle($config, $loader, $container);
         }
 
-        if (isset($bundles[SimpleBusEventBusBundle::class])) {
-            ContainerHelper::configureSimpleEventBus($container);
-        }
-
+        // framework infra
         if (isset($bundles[FrameworkBundle::class])) {
             $this->prepareFrameworkBundle($config, $loader, $container);
         }
@@ -101,24 +93,10 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     public function prepend(ContainerBuilder $container): void
     {
         $config = $this->processConfiguration($this->getConfiguration($configs = $container->getExtensionConfig($this->getAlias()), $container), $configs);
-        $bundles = array_flip($container->getParameter('kernel.bundles'));
+        $bundles = ContainerHelper::getBundles($container);
         $classMapping = $config['class_mapping'];
 
         if (isset($bundles[DoctrineBundle::class])) {
-            $container->prependExtensionConfig('doctrine', [
-                'orm' => [
-                    'resolve_target_entities' => $classMapping,
-                    'mappings' => [
-                        'msgphp_user' => [
-                            'dir' => '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Resources/mapping',
-                            'type' => 'xml',
-                            'prefix' => 'MsgPhp\\User\\Entity',
-                            'is_bundle' => false,
-                        ],
-                    ],
-                ],
-            ]);
-
             if (class_exists(Uuid::class)) {
                 $types = [];
                 if (is_subclass_of($classMapping[UserIdInterface::class], DomainId::class)) {
@@ -133,33 +111,46 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     ]);
                 }
             }
-        }
-    }
 
-    private function prepareFrameworkBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
-    {
-        $classMapping = $config['class_mapping'];
+            if (class_exists(DoctrineOrmVersion::class)) {
+                $container->prependExtensionConfig('doctrine', [
+                    'orm' => [
+                        'resolve_target_entities' => $classMapping,
+                        'mappings' => [
+                            'msgphp_user' => [
+                                'dir' => '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Resources/mapping',
+                                'type' => 'xml',
+                                'prefix' => 'MsgPhp\\User\\Entity',
+                                'is_bundle' => false,
+                            ],
+                        ],
+                    ],
+                ]);
 
-        if (interface_exists(ValidatorInterface::class)) {
-            $loader->load('validator.php'); // @fi
-        }
-
-        if (class_exists(Application::class) && $container->has(CommandBusInterface::class)) {
-            $loader->load('console.php');
-
-            if (!isset($classMapping[PendingUser::class])) {
-                $container->removeDefinition(CreatePendingUserCommand::class);
-            }
-
-            if (!isset($classMapping[UserRole::class])) {
-                $container->removeDefinition(AddUserRoleCommand::class);
-                $container->removeDefinition(DeleteUserRoleCommand::class);
+                if (isset($bundles[MsgPhpEavBundle::class])) {
+                    $container->prependExtensionConfig('doctrine', [
+                        'orm' => [
+                            'mappings' => [
+                                'msgphp_user' => [
+                                    'dir' => '%kernel.project_dir%/vendor/msgphp/user/Infra/Doctrine/Resources/mapping-eav',
+                                    'type' => 'xml',
+                                    'prefix' => 'MsgPhp\\User\\Entity',
+                                    'is_bundle' => false,
+                                ],
+                            ],
+                        ],
+                    ]);
+                }
             }
         }
     }
 
     private function prepareDoctrineBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
     {
+        if (!class_exists(DoctrineOrmVersion::class)) {
+            return;
+        }
+
         $loader->load('doctrine.php');
 
         $classMapping = $config['class_mapping'];
@@ -197,26 +188,65 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
     private function prepareSimpleBusCommandBusBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
     {
+        if (!$container->has(UserRepositoryInterface::class)) {
+            return;
+        }
+
         $loader->load('simplebus.php');
 
         $classMapping = $config['class_mapping'];
 
-        if (!isset($classMapping[PendingUser::class])) {
+        if (!isset($classMapping[PendingUser::class]) || !$container->has(PendingUserRepositoryInterface::class)) {
             $container->removeDefinition(ConfirmPendingUserHandler::class);
             $container->removeDefinition(CreatePendingUserHandler::class);
         }
 
-        if (!isset($classMapping[UserRole::class])) {
+        if (!isset($classMapping[UserAttributeValue::class]) || !$container->has(UserAttributeValueRepositoryInterface::class)) {
+            $container->removeDefinition(AddUserAttributeValueHandler::class);
+            $container->removeDefinition(ChangeUserAttributeValueHandler::class);
+            $container->removeDefinition(DeleteUserAttributeValueHandler::class);
+        }
+
+        if (!isset($classMapping[UserRole::class]) || !$container->has(UserRoleRepositoryInterface::class)) {
             $container->removeDefinition(AddUserRoleHandler::class);
             $container->removeDefinition(DeleteUserRoleHandler::class);
         }
 
-        if (!isset($classMapping[UserSecondaryEmail::class])) {
+        if (!isset($classMapping[UserSecondaryEmail::class]) || !$container->has(UserSecondaryEmailRepositoryInterface::class)) {
             $container->removeDefinition(AddUserSecondaryEmailHandler::class);
             $container->removeDefinition(ConfirmUserSecondaryEmailHandler::class);
             $container->removeDefinition(DeleteUserSecondaryEmailHandler::class);
             $container->removeDefinition(MarkUserSecondaryEmailPrimaryHandler::class);
             $container->removeDefinition(SetUserPendingPrimaryEmailHandler::class);
+        }
+    }
+
+    private function prepareFrameworkBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $classMapping = $config['class_mapping'];
+
+        // console
+        if (class_exists(Application::class) && $container->has(CommandBusInterface::class) && $container->has(UserRepositoryInterface::class) && $container->has(EmailLookupInterface::class)) {
+            $loader->load('console.php');
+
+            if (!isset($classMapping[PendingUser::class])) {
+                $container->removeDefinition(CreatePendingUserCommand::class);
+            }
+
+            if (!isset($classMapping[UserRole::class])) {
+                $container->removeDefinition(AddUserRoleCommand::class);
+                $container->removeDefinition(DeleteUserRoleCommand::class);
+            }
+        }
+
+        // validator
+        if (interface_exists(ValidatorInterface::class)) {
+            $loader->load('validator.php');
+
+            if (!$container->has(EmailLookupInterface::class)) {
+                $container->removeDefinition(ExistingEmailValidator::class);
+                $container->removeDefinition(UniqueEmailValidator::class);
+            }
         }
     }
 }

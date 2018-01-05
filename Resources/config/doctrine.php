@@ -30,9 +30,9 @@ return function (ContainerConfigurator $container) use ($reflector, $repositorie
     ;
 
     foreach (glob($repositories) as $file) {
-        foreach ($reflector($repository = $ns.basename($file, '.php'))->getInterfaces() as $interface) {
+        foreach ($reflector($repository = $ns.basename($file, '.php'))->getInterfaceNames() as $interface) {
             try {
-                $services->get($interface = $interface->getName());
+                $services->get($interface);
             } catch (ServiceNotFoundException $e) {
                 $services->alias($interface, $repository);
             }

@@ -45,6 +45,25 @@ And be done.
 
 ## Usage
 
+### With `DoctrineBundle` + `doctrine/orm`
+
+Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered as a service. Corresponding domain interfaces
+from  `MsgPhp\User\Repository\*` are aliased.
+
+Minimal configuration:
+
+```yaml
+# config/packages/doctrine.yaml
+
+doctrine:
+    orm:
+        mappings:
+            app:
+                dir: '%kernel.project_dir%/src/Entity'
+                type: annotation
+                prefix: App\Entity
+```
+
 ### With `FrameworkBundle` + `symfony/console`
 
 Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
@@ -53,7 +72,8 @@ Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a 
 bin/console user:create
 ```
 
-- Requires `DoctrineBundle` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias.
+- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
+- Requires `SimpleBusCommandBusBundle` or a `MsgPhp\Domain\CommandBusInterface` service/alias
 
 ### With `FrameworkBundle` + `symfony/validator`
 
@@ -68,7 +88,7 @@ private $newEmail;
 private $currentEmail;
 ```
 
-- Requires `DoctrineBundle` or a `MsgPhp\User\Infra\Validator\EmailLookupInterface` service/alias.
+- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Infra\Validator\EmailLookupInterface` service/alias
 
 ### With `SecurityBundle`
 
@@ -90,7 +110,7 @@ security:
             anonymous: ~
 ```
 
-- Requires `DoctrineBundle` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias.
+- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
 
 In practice the security user is decoupled from your domain entity user. An approach described
 [here](https://stovepipe.systems/post/decoupling-your-security-user).
@@ -106,8 +126,8 @@ Domain command handlers from `MsgPhp\User\Command\Handler\*` are registered as a
 <?php
 $messageBus->handle(new DeleteUserCommand($user->getId()));
 ```
-- Requires `DoctrineBundle` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias.
-- With `SimpleBusEventBusBundle` corresponding domain events are dispatched.
+- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
+- With `SimpleBusEventBusBundle` corresponding domain events are dispatched
 
 ### With `TwigBundle`
 
@@ -118,11 +138,6 @@ Twig extensions from `MsgPhp\User\Infra\Twig\*` are registered as a service.
     <p>Hello {{ msgphp_current_user().email }}</p> {# the domain user: `App\Entity\User` #}
 {% endif %}
 ```
-
-### With `DoctrineBundle`
-
-Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered as a service. Corresponding domain interfaces
-from  `MsgPhp\User\Repository\*` are aliased.
 
 ## Contributing
 

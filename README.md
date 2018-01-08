@@ -1,5 +1,3 @@
-<p align="center"><a href="https://msgphp.github.io/"><img src="https://raw.githubusercontent.com/msgphp/msgphp.github.io/master/assets/love_is_med.png" alt="Love is…"></a></p>
-
 # User Bundle
 
 A new Symfony bundle for basic user management.

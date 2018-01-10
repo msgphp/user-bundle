@@ -60,6 +60,13 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         $loader->load('services.php');
 
+        ContainerHelper::configureIdentityMap($container, $classMapping, [
+            PendingUser::class => 'email',
+            UserAttributeValue::class => ['user', 'attributeValue'],
+            User::class => 'id',
+            UserRole::class => ['user', 'role'],
+            UserSecondaryEmail::class => ['user', 'email'],
+        ]);
         ContainerHelper::configureEntityFactory($container, $classMapping, [
             User::class => UserIdInterface::class,
         ]);
@@ -226,6 +233,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $classMapping = $config['class_mapping'];
 
         // console
+        // @todo register default EmailLookupInterface from repository implems
         if (class_exists(Application::class) && $container->has(CommandBusInterface::class) && $container->has(UserRepositoryInterface::class) && $container->has(EmailLookupInterface::class)) {
             $loader->load('console.php');
 

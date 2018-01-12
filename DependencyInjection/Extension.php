@@ -7,8 +7,7 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\CommandBusInterface;
-use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
-use MsgPhp\Domain\Infra\Uuid\DomainId;
+use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\Command\Handler\{AddUserAttributeValueHandler, AddUserRoleHandler, AddUserSecondaryEmailHandler, ChangeUserAttributeValueHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserAttributeValueHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
 use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
@@ -19,7 +18,6 @@ use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
 use MsgPhp\User\Infra\Validator\{EmailLookupInterface, ExistingEmailValidator, UniqueEmailValidator};
 use MsgPhp\User\Repository\{PendingUserRepositoryInterface, UserAttributeValueRepositoryInterface, UserRepositoryInterface, UserRoleRepositoryInterface, UserSecondaryEmailRepositoryInterface};
 use MsgPhp\User\UserIdInterface;
-use Ramsey\Uuid\Uuid;
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -55,23 +53,18 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
-        $bundles = ContainerHelper::getBundles($container);
-        $classMapping = $config['class_mapping'];
+
+        ConfigHelper::resolveResolveDataTypeMapping($container, $config['data_type_mapping']);
+        ConfigHelper::resolveClassMapping(Configuration::DATA_TYPE_MAP, $config['data_type_mapping'], $config['class_mapping']);
 
         $loader->load('services.php');
 
-        ContainerHelper::configureIdentityMap($container, $classMapping, [
-            PendingUser::class => 'email',
-            UserAttributeValue::class => ['user', 'attributeValue'],
-            User::class => 'id',
-            UserRole::class => ['user', 'role'],
-            UserSecondaryEmail::class => ['user', 'email'],
-        ]);
-        ContainerHelper::configureEntityFactory($container, $classMapping, [
-            User::class => UserIdInterface::class,
-        ]);
+        ContainerHelper::configureIdentityMap($container, $config['class_mapping'], Configuration::IDENTITY_MAP);
+        ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
         ContainerHelper::configureDoctrine($container);
         ContainerHelper::configureSimpleBus($container);
+
+        $bundles = ContainerHelper::getBundles($container);
 
         // persistence infra
         if (isset($bundles[DoctrineBundle::class])) {
@@ -100,25 +93,18 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     public function prepend(ContainerBuilder $container): void
     {
         $config = $this->processConfiguration($this->getConfiguration($configs = $container->getExtensionConfig($this->getAlias()), $container), $configs);
+
+        ConfigHelper::resolveResolveDataTypeMapping($container, $config['data_type_mapping']);
+        ConfigHelper::resolveClassMapping(Configuration::DATA_TYPE_MAP, $config['data_type_mapping'], $config['class_mapping']);
+
+        ContainerHelper::configureDoctrineTypes($container, $config['data_type_mapping'], $config['class_mapping'], [
+            UserIdInterface::class => UserIdType::class,
+        ]);
+
         $bundles = ContainerHelper::getBundles($container);
         $classMapping = $config['class_mapping'];
 
         if (isset($bundles[DoctrineBundle::class])) {
-            if (class_exists(Uuid::class)) {
-                $types = [];
-                if (is_subclass_of($classMapping[UserIdInterface::class], DomainId::class)) {
-                    $types[UserIdType::NAME] = UserIdType::class;
-                }
-
-                if ($types) {
-                    $container->prependExtensionConfig('doctrine', [
-                        'dbal' => [
-                            'types' => $types,
-                        ],
-                    ]);
-                }
-            }
-
             if (class_exists(DoctrineOrmVersion::class)) {
                 $container->prependExtensionConfig('doctrine', [
                     'orm' => [

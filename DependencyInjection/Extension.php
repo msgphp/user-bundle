@@ -12,8 +12,8 @@ use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\Command\Handler\{AddUserAttributeValueHandler, AddUserRoleHandler, AddUserSecondaryEmailHandler, ChangeUserAttributeValueHandler, ConfirmPendingUserHandler, ConfirmUserSecondaryEmailHandler, CreatePendingUserHandler, DeleteUserAttributeValueHandler, DeleteUserRoleHandler, DeleteUserSecondaryEmailHandler, MarkUserSecondaryEmailPrimaryHandler, SetUserPendingPrimaryEmailHandler};
 use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Console\Command\{AddUserRoleCommand, CreatePendingUserCommand, DeleteUserRoleCommand};
+use MsgPhp\User\Infra\Doctrine\{EntityFieldsMapping, SqlEmailLookup};
 use MsgPhp\User\Infra\Doctrine\Repository\{PendingUserRepository, UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
-use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
 use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
 use MsgPhp\User\Infra\Validator\{EmailLookupInterface, ExistingEmailValidator, UniqueEmailValidator};
 use MsgPhp\User\Repository\{PendingUserRepositoryInterface, UserAttributeValueRepositoryInterface, UserRepositoryInterface, UserRoleRepositoryInterface, UserSecondaryEmailRepositoryInterface};
@@ -61,7 +61,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         ContainerHelper::configureIdentityMap($container, $config['class_mapping'], Configuration::IDENTITY_MAP);
         ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
-        ContainerHelper::configureDoctrine($container);
+        ContainerHelper::configureDoctrine($container, [EntityFieldsMapping::class]);
         ContainerHelper::configureSimpleBus($container);
 
         $bundles = ContainerHelper::getBundles($container);

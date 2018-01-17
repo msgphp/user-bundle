@@ -2,22 +2,20 @@
 
 A new Symfony bundle for basic user management.
 
-## Features
-
-- Symfony 3.4 / 4.0 ready
-- E-mail / password based authentication
-- User registration / E-mail confirmation
-- Forgot password / Reset password / Change password
-- Primary / secondary e-mails
-- Disabled / enabled users
-- User roles
-- User attribute values
-
 ## Installation
 
 ```bash
 composer require msgphp/user-bundle
 ```
+
+## Features
+
+- Symfony 3.4 / 4.0 ready
+- Credential independent (supports e-mail, nickname, etc.)
+- Disabled / enabled users
+- User roles
+- User attribute values
+- User secondary e-mails
 
 ## Blog posts
 
@@ -128,16 +126,6 @@ $messageBus->handle(new DeleteUserCommand($user->getId()));
 ```
 - Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
 - With `SimpleBusEventBusBundle` corresponding domain events are dispatched
-
-### With `TwigBundle`
-
-Twig extensions from `MsgPhp\User\Infra\Twig\*` are registered as a service.
-
-```twig
-{% if app.user %} {# the security user: `MsgPhp\User\Infra\Security\SecurityUser` #}
-    <p>Hello {{ msgphp_current_user().email }}</p> {# the domain user: `App\Entity\User` #}
-{% endif %}
-```
 
 ## Contributing
 

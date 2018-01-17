@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle;
 
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
-use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{BundleHelper, ContainerHelper};
-use MsgPhp\Domain\Infra\DependencyInjection\Compiler\DoctrineObjectFieldMappingPass;
+use MsgPhp\Domain\Infra\DependencyInjection\Bundle\BundleHelper;
 use MsgPhp\UserBundle\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
@@ -19,16 +17,12 @@ final class MsgPhpUserBundle extends Bundle
 {
     public function boot(): void
     {
-        BundleHelper::prepareDoctrineTypes($this->container);
+        BundleHelper::initDoctrineTypes($this->container);
     }
 
     public function build(ContainerBuilder $container): void
     {
-        $bundles = ContainerHelper::getBundles($container);
-
-        if (isset($bundles[DoctrineBundle::class])) {
-            ContainerHelper::addCompilerPassOnce($container, DoctrineObjectFieldMappingPass::class);
-        }
+        BundleHelper::initDomain($container);
     }
 
     public function getContainerExtension(): ?ExtensionInterface

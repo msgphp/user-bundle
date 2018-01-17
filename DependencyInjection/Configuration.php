@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ConfigHelper;
-use MsgPhp\User\Entity\{PendingUser, User, UserAttributeValue, UserRole, UserSecondaryEmail};
+use MsgPhp\User\Entity\{Credential, User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Uuid;
-use MsgPhp\User\{UserId, UserIdInterface};
+use MsgPhp\User\{CredentialInterface, UserId, UserIdInterface};
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -17,7 +17,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 final class Configuration implements ConfigurationInterface
 {
     public const IDENTITY_MAP = [
-        PendingUser::class => 'email',
         UserAttributeValue::class => ['user', 'attributeValue'],
         User::class => 'id',
         UserRole::class => ['user', 'role'],
@@ -44,7 +43,13 @@ final class Configuration implements ConfigurationInterface
         $treeBuilder->root(Extension::ALIAS)
             ->append(
                 ConfigHelper::createClassMappingNode('class_mapping', $requiredEntities, function (array $value) use ($availableIds): array {
-                    return $value + array_fill_keys($availableIds, null);
+                    $value = $value + array_fill_keys($availableIds, null);
+
+                    if (!isset($value[CredentialInterface::class])) {
+                        $value[CredentialInterface::class] = Credential\Anonymous::class;
+                    }
+
+                    return $value;
                 })
             )
             ->append(

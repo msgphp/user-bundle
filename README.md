@@ -62,32 +62,6 @@ doctrine:
                 prefix: App\Entity
 ```
 
-### With `FrameworkBundle` + `symfony/console`
-
-Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
-
-```bash
-bin/console user:create
-```
-
-- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
-- Requires `SimpleBusCommandBusBundle` or a `MsgPhp\Domain\CommandBusInterface` service/alias
-
-### With `FrameworkBundle` + `symfony/validator`
-
-Constraint validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.
-
-```php
-<?php
-// @UnqiueEmail()
-private $newEmail;
-
-// @ExistingEmail()
-private $currentEmail;
-```
-
-- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Infra\Validator\EmailLookupInterface` service/alias
-
 ### With `SecurityBundle`
 
 Minimal configuration:
@@ -115,17 +89,6 @@ In practice the security user is decoupled from your domain entity user. An appr
 
 - `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
 - `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
-
-### With `SimpleBusCommandBusBundle`
-
-Domain command handlers from `MsgPhp\User\Command\Handler\*` are registered as a service.
-
-```php
-<?php
-$messageBus->handle(new DeleteUserCommand($user->getId()));
-```
-- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
-- With `SimpleBusEventBusBundle` corresponding domain events are dispatched
 
 ## Contributing
 

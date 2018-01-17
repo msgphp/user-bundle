@@ -25,11 +25,8 @@
     },
     "require-dev": {
         "doctrine/doctrine-bundle": "^1.8",
-        "simple-bus/symfony-bridge": "^5.0",
-        "symfony/framework-bundle": "^3.4|^4.0",
         "symfony/security-bundle": "^3.4|^4.0",
         "symfony/phpunit-bridge": "^3.4|^4.0",
-        "symfony/validator": "^3.4|^4.0",
         "symfony/var-dumper": "^3.4|^4.0"
     },
     "suggest": {

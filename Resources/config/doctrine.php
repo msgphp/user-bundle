@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace MsgPhp;
 
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
-use MsgPhp\User\Infra\Doctrine\SqlEmailLookup;
-use MsgPhp\User\Infra\Validator\EmailLookupInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -24,9 +22,6 @@ return function (ContainerConfigurator $container) use ($reflector, $repositorie
             ->private()
 
         ->load($ns = 'MsgPhp\\User\\Infra\\Doctrine\\Repository\\', $pattern)
-
-        ->set(SqlEmailLookup::class)
-        ->alias(EmailLookupInterface::class, SqlEmailLookup::class)
     ;
 
     foreach (glob($repositories) as $file) {

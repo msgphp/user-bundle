@@ -7,6 +7,7 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
+use MsgPhp\User\CredentialInterface;
 use MsgPhp\User\Entity\{User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Doctrine\EntityFieldsMapping;
 use MsgPhp\User\Infra\Doctrine\Repository\{UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
@@ -50,7 +51,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         ContainerHelper::configureIdentityMap($container, $config['class_mapping'], Configuration::IDENTITY_MAP);
         ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
-        ContainerHelper::configureDoctrineOrm($container, self::getDoctrineMappingFiles($container), [EntityFieldsMapping::class]);
+        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($container), [EntityFieldsMapping::class]);
 
         $bundles = ContainerHelper::getBundles($container);
 
@@ -75,7 +76,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         ContainerHelper::configureDoctrineTypes($container, $config['data_type_mapping'], $config['class_mapping'], [
             UserIdInterface::class => UserIdType::class,
         ]);
-        ContainerHelper::configureDoctrineMapping($container, $config['class_mapping']);
+        ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);
     }
 
     private function prepareDoctrineBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
@@ -96,8 +97,21 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         ] as $repository => $class) {
             if (null === $class) {
                 $container->removeDefinition($repository);
-            } else {
-                $container->getDefinition($repository)->setArgument('$class', $class);
+                continue;
+            }
+
+            ($definition = $container->getDefinition($repository))
+                ->setArgument('$class', $class);
+
+            if (UserRepository::class === $repository) {
+                if (($credentialType = (new \ReflectionMethod($class, 'getCredential'))->getReturnType())->isBuiltin() || !is_subclass_of($credentialClass = $credentialType->getName(), CredentialInterface::class)) {
+                    throw new \LogicException(sprintf('Method "%s::getCredential" must return a sub class of "%s", got "%s".', $class, CredentialInterface::class, $credentialClass));
+                }
+                if ($credentialType->allowsNull()) {
+                    throw new \LogicException(sprintf('Method "%s::getCredential" cannot be null-able.', $class));
+                }
+
+                $definition->setArgument('$fieldMapping', ['username' => 'credential.'.$credentialClass::getUsernameField()]);
             }
         }
     }

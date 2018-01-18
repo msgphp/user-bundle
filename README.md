@@ -90,6 +90,11 @@ In practice the security user is decoupled from your domain entity user. An appr
 - `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
 - `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
 
+## Documentation
+
+- Read the [main documentation](https://msgphp.github.io/docs)
+- Try the Symfony [demo application](https://github.com/msgphp/symfony-demo-app)
+
 ## Contributing
 
 This repository is **READ ONLY**. Issues and pull requests should be submitted in the

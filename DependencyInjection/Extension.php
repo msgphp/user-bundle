@@ -7,12 +7,11 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
-use MsgPhp\User\CredentialInterface;
+use MsgPhp\User\{CredentialInterface, UserIdInterface};
 use MsgPhp\User\Entity\{User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Doctrine\EntityFieldsMapping;
 use MsgPhp\User\Infra\Doctrine\Repository\{UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
-use MsgPhp\User\UserIdInterface;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
@@ -103,12 +102,12 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ($definition = $container->getDefinition($repository))
                 ->setArgument('$class', $class);
 
-            if (UserRepository::class === $repository) {
-                if (($credentialType = (new \ReflectionMethod($class, 'getCredential'))->getReturnType())->isBuiltin() || !is_subclass_of($credentialClass = $credentialType->getName(), CredentialInterface::class)) {
-                    throw new \LogicException(sprintf('Method "%s::getCredential" must return a sub class of "%s", got "%s".', $class, CredentialInterface::class, $credentialClass));
+            if (UserRepository::class === $repository && null !== ($credentialType = (new \ReflectionMethod($class, 'getCredential'))->getReturnType())) {
+                if ($credentialType->isBuiltin() || !is_subclass_of($credentialClass = $credentialType->getName(), CredentialInterface::class)) {
+                    throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $class, CredentialInterface::class, $credentialType->getName()));
                 }
                 if ($credentialType->allowsNull()) {
-                    throw new \LogicException(sprintf('Method "%s::getCredential" cannot be null-able.', $class));
+                    throw new \LogicException(sprintf('Method "%s::getCredential()" cannot be null-able.', $class));
                 }
 
                 $definition->setArgument('$fieldMapping', ['username' => 'credential.'.$credentialClass::getUsernameField()]);

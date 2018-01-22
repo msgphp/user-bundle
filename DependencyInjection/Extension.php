@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use MsgPhp\Domain\Factory\EntityFactoryInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{CredentialInterface, UserIdInterface};
@@ -12,19 +13,23 @@ use MsgPhp\User\Entity\{User, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Doctrine\EntityFieldsMapping;
 use MsgPhp\User\Infra\Doctrine\Repository\{UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
+use MsgPhp\User\Infra\Security;
+use MsgPhp\User\Repository\UserRepositoryInterface;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
  */
-final class Extension extends BaseExtension implements PrependExtensionInterface
+final class Extension extends BaseExtension implements PrependExtensionInterface, CompilerPassInterface
 {
     public const ALIAS = 'msgphp_user';
 
@@ -76,6 +81,16 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             UserIdInterface::class => UserIdType::class,
         ]);
         ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);
+    }
+
+    public function process(ContainerBuilder $container): void
+    {
+        if ($container->hasDefinition('data_collector.security')) {
+            $container->getDefinition('data_collector.security')
+                ->setClass(Security\DataCollector::class)
+                ->setArgument('$repository', new Reference(UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
+                ->setArgument('$factory', new Reference(EntityFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
+        }
     }
 
     private function prepareDoctrineBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void

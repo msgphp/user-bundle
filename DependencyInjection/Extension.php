@@ -8,14 +8,8 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\Factory\EntityFactoryInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
-use MsgPhp\User\UserIdInterface;
-use MsgPhp\User\Entity\{User, Username, UserAttributeValue, UserRole, UserSecondaryEmail};
-use MsgPhp\User\Infra\Doctrine\EntityFieldsMapping;
-use MsgPhp\User\Infra\Doctrine\Event\UsernameListener;
-use MsgPhp\User\Infra\Doctrine\Repository\{UserAttributeValueRepository, UserRepository, UsernameRepository, UserRoleRepository, UserSecondaryEmailRepository};
-use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
-use MsgPhp\User\Infra\{Console as ConsoleInfra, Security as SecurityInfra, Validator as ValidatorInfra};
-use MsgPhp\User\Repository\{UserRepositoryInterface, UsernameRepositoryInterface};
+use MsgPhp\User\{Entity, Repository, UserIdInterface};
+use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
@@ -58,7 +52,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         ContainerHelper::configureIdentityMap($container, $config['class_mapping'], Configuration::IDENTITY_MAP);
         ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
-        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [EntityFieldsMapping::class]);
+        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [DoctrineInfra\EntityFieldsMapping::class]);
 
         $bundles = ContainerHelper::getBundles($container);
 
@@ -75,7 +69,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (class_exists(Validation::class)) {
             $loader->load('validator.php');
 
-            if (!$container->has(UserRepositoryInterface::class)) {
+            if (!$container->has(Repository\UserRepositoryInterface::class)) {
                 $container->removeDefinition(ValidatorInfra\ExistingUsernameValidator::class);
                 $container->removeDefinition(ValidatorInfra\UniqueUsernameValidator::class);
             }
@@ -84,7 +78,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (class_exists(ConsoleEvents::class)) {
             $loader->load('console.php');
 
-            if (!$container->has(UsernameRepositoryInterface::class)) {
+            if (!$container->has(Repository\UsernameRepositoryInterface::class)) {
                 $container->removeDefinition(ConsoleInfra\Command\SynchronizeUsernamesCommand::class);
             }
         }
@@ -98,7 +92,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         ConfigHelper::resolveClassMapping(Configuration::DATA_TYPE_MAP, $config['data_type_mapping'], $config['class_mapping']);
 
         ContainerHelper::configureDoctrineTypes($container, $config['data_type_mapping'], $config['class_mapping'], [
-            UserIdInterface::class => UserIdType::class,
+            UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
         ]);
         ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);
     }
@@ -108,7 +102,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if ($container->hasDefinition('data_collector.security')) {
             $container->getDefinition('data_collector.security')
                 ->setClass(SecurityInfra\DataCollector::class)
-                ->setArgument('$repository', new Reference(UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
+                ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
                 ->setArgument('$factory', new Reference(EntityFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
         }
     }
@@ -124,11 +118,11 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $classMapping = $config['class_mapping'];
 
         foreach ([
-            UserRepository::class => $classMapping[User::class],
-            UsernameRepository::class => $config['username_lookup'] ? Username::class : null,
-            UserAttributeValueRepository::class => $classMapping[UserAttributeValue::class] ?? null,
-            UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
-            UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
+            DoctrineInfra\Repository\UserRepository::class => $classMapping[Entity\User::class],
+            DoctrineInfra\Repository\UsernameRepository::class => $config['username_lookup'] ? Entity\Username::class : null,
+            DoctrineInfra\Repository\UserAttributeValueRepository::class => $classMapping[Entity\UserAttributeValue::class] ?? null,
+            DoctrineInfra\Repository\UserRoleRepository::class => $classMapping[Entity\UserRole::class] ?? null,
+            DoctrineInfra\Repository\UserSecondaryEmailRepository::class => $classMapping[Entity\UserSecondaryEmail::class] ?? null,
         ] as $repository => $class) {
             if (null === $class) {
                 ContainerHelper::removeDefinitionWithAliases($container, $repository);
@@ -138,20 +132,20 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ($definition = $container->getDefinition($repository))
                 ->setArgument('$class', $class);
 
-            if (UserRepository::class === $repository && null !== $config['username_field']) {
+            if (DoctrineInfra\Repository\UserRepository::class === $repository && null !== $config['username_field']) {
                 $definition->setArgument('$fieldMapping', ['username' => $config['username_field']]);
             }
 
-            if (UsernameRepository::class === $repository) {
+            if (DoctrineInfra\Repository\UsernameRepository::class === $repository) {
                 $definition->setArgument('$targetMapping', $config['username_lookup']);
             }
         }
 
         if ($config['username_lookup']) {
-            $container->getDefinition(UsernameListener::class)
+            $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
                 ->setArgument('$mapping', $config['username_lookup']);
         } else {
-            $container->removeDefinition(UsernameListener::class);
+            $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
         }
     }
 

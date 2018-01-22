@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ConfigHelper;
-use MsgPhp\User\Entity\{Credential, User, UserAttributeValue, UserRole, UserSecondaryEmail};
-use MsgPhp\User\Infra\Uuid;
-use MsgPhp\User\{CredentialInterface, UserId, UserIdInterface};
+use MsgPhp\User\{CredentialInterface, Entity, UserId, UserIdInterface};
+use MsgPhp\User\Infra\Uuid as UuidInfra;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -17,19 +16,19 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 final class Configuration implements ConfigurationInterface
 {
     public const IDENTITY_MAP = [
-        UserAttributeValue::class => ['user', 'attributeValue'],
-        User::class => 'id',
-        UserRole::class => ['user', 'role'],
-        UserSecondaryEmail::class => ['user', 'email'],
+        Entity\UserAttributeValue::class => ['user', 'attributeValue'],
+        Entity\User::class => 'id',
+        Entity\UserRole::class => ['user', 'role'],
+        Entity\UserSecondaryEmail::class => ['user', 'email'],
     ];
     public const DATA_TYPE_MAP = [
         UserIdInterface::class => [
             UserId::class => ConfigHelper::NATIVE_DATA_TYPES,
-            Uuid\UserId::class => ConfigHelper::UUID_DATA_TYPES,
+            UuidInfra\UserId::class => ConfigHelper::UUID_DATA_TYPES,
         ],
     ];
     public const REQUIRED_AGGREGATE_ROOTS = [
-        User::class => UserIdInterface::class,
+        Entity\User::class => UserIdInterface::class,
     ];
     public const OPTIONAL_AGGREGATE_ROOTS = [];
     public const AGGREGATE_ROOTS = self::REQUIRED_AGGREGATE_ROOTS + self::OPTIONAL_AGGREGATE_ROOTS;
@@ -43,13 +42,7 @@ final class Configuration implements ConfigurationInterface
         $treeBuilder->root(Extension::ALIAS)
             ->append(
                 ConfigHelper::createClassMappingNode('class_mapping', $requiredEntities, function (array $value) use ($availableIds): array {
-                    $value = $value + array_fill_keys($availableIds, null);
-
-                    if (!isset($value[CredentialInterface::class])) {
-                        $value[CredentialInterface::class] = Credential\Anonymous::class;
-                    }
-
-                    return $value;
+                    return $value + array_fill_keys($availableIds, null);
                 })
             )
             ->append(
@@ -78,7 +71,7 @@ final class Configuration implements ConfigurationInterface
             ->validate()
                 ->always()
                 ->then(function (array $config): array {
-                    $userClass = $config['class_mapping'][User::class];
+                    $userClass = $config['class_mapping'][Entity\User::class];
                     $usernameLookup = [];
                     foreach ($config['username_lookup'] as &$value) {
                         if (isset($config['class_mapping'][$value['target']])) {

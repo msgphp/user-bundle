@@ -63,8 +63,68 @@ final class Configuration implements ConfigurationInterface
                     return $value;
                 })
                 ->addDefaultChildrenIfNoneSet($availableIds)
-            );
+            )
+            ->children()
+                ->arrayNode('username_lookup')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('target')->isRequired()->cannotBeEmpty()->end()
+                            ->scalarNode('field')->isRequired()->cannotBeEmpty()->end()
+                            ->scalarNode('mapped_by')->defaultValue('user')->cannotBeEmpty()->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+            ->validate()
+                ->always()
+                ->then(function (array $config): array {
+                    $userClass = $config['class_mapping'][User::class];
+                    $usernameLookup = [];
+                    foreach ($config['username_lookup'] as &$value) {
+                        if (isset($config['class_mapping'][$value['target']])) {
+                            $value['target'] = $config['class_mapping'][$value['target']];
+                        }
+
+                        if (isset($usernameLookup[$value['target']]) && in_array($value, $usernameLookup[$value['target']], true)) {
+                            throw new \LogicException(sprintf('Duplicate username lookup mapping for "%s".', $value['target']));
+                        }
+
+                        $usernameLookup[$value['target']][] = $value;
+                    }
+                    unset($value);
+
+                    if (isset($usernameLookup[$userClass])) {
+                        throw new \LogicException(sprintf('Username lookup mapping for "%s" cannot be overwritten.', $userClass));
+                    }
+
+                    if (null !== ($usernameField = self::getUsernameField($userClass)) && $usernameLookup) {
+                        $usernameLookup[$userClass][] = ['target' => $userClass, 'field' => $usernameField];
+                    }
+
+                    $config['username_field'] = $usernameField;
+                    $config['username_lookup'] = $usernameLookup;
+
+                    return $config;
+                })
+            ->end();
 
         return $treeBuilder;
+    }
+
+    private static function getUsernameField(string $class): ?string
+    {
+        if (null === $credential = (new \ReflectionMethod($class, 'getCredential'))->getReturnType()) {
+            return null;
+        }
+
+        if ($credential->isBuiltin() || !is_subclass_of($credentialClass = $credential->getName(), CredentialInterface::class)) {
+            throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $class, CredentialInterface::class, $credential->getName()));
+        }
+
+        if ($credential->allowsNull()) {
+            throw new \LogicException(sprintf('Method "%s::getCredential()" cannot be null-able.', $class));
+        }
+
+        return 'credential.'.$credentialClass::getUsernameField();
     }
 }

@@ -91,6 +91,25 @@ In practice the security user is decoupled from your domain entity user. An appr
 - `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
 - `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
 
+### With `symfony/validator`
+
+Validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.
+
+```php
+<?php
+
+use MsgPhp\User\Infra\Validator;
+
+class MyClass
+{
+    /** @Validator\ExistingUsername() */
+    public $currentUsername;
+
+    /** @Validator\UniqueUsername() */
+    public $availableUsername;
+}
+```
+
 ## Documentation
 
 - Read the [main documentation](https://msgphp.github.io/docs/)

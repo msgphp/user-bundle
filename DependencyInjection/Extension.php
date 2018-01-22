@@ -8,23 +8,26 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use MsgPhp\Domain\Factory\EntityFactoryInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
-use MsgPhp\User\{CredentialInterface, UserIdInterface};
-use MsgPhp\User\Entity\{User, UserAttributeValue, UserRole, UserSecondaryEmail};
+use MsgPhp\User\UserIdInterface;
+use MsgPhp\User\Entity\{User, Username, UserAttributeValue, UserRole, UserSecondaryEmail};
 use MsgPhp\User\Infra\Doctrine\EntityFieldsMapping;
-use MsgPhp\User\Infra\Doctrine\Repository\{UserAttributeValueRepository, UserRepository, UserRoleRepository, UserSecondaryEmailRepository};
+use MsgPhp\User\Infra\Doctrine\Event\UsernameListener;
+use MsgPhp\User\Infra\Doctrine\Repository\{UserAttributeValueRepository, UserRepository, UsernameRepository, UserRoleRepository, UserSecondaryEmailRepository};
 use MsgPhp\User\Infra\Doctrine\Type\UserIdType;
-use MsgPhp\User\Infra\Security;
-use MsgPhp\User\Repository\UserRepositoryInterface;
-use Symfony\Bundle\SecurityBundle\SecurityBundle;
+use MsgPhp\User\Infra\{Console as ConsoleInfra, Security as SecurityInfra, Validator as ValidatorInfra};
+use MsgPhp\User\Repository\{UserRepositoryInterface, UsernameRepositoryInterface};
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Validator\Validation;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -55,7 +58,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         ContainerHelper::configureIdentityMap($container, $config['class_mapping'], Configuration::IDENTITY_MAP);
         ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
-        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($container), [EntityFieldsMapping::class]);
+        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [EntityFieldsMapping::class]);
 
         $bundles = ContainerHelper::getBundles($container);
 
@@ -65,8 +68,25 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         // framework infra
-        if (isset($bundles[SecurityBundle::class])) {
+        if (class_exists(Security::class)) {
             $loader->load('security.php');
+        }
+
+        if (class_exists(Validation::class)) {
+            $loader->load('validator.php');
+
+            if (!$container->has(UserRepositoryInterface::class)) {
+                $container->removeDefinition(ValidatorInfra\ExistingUsernameValidator::class);
+                $container->removeDefinition(ValidatorInfra\UniqueUsernameValidator::class);
+            }
+        }
+
+        if (class_exists(ConsoleEvents::class)) {
+            $loader->load('console.php');
+
+            if (!$container->has(UsernameRepositoryInterface::class)) {
+                $container->removeDefinition(ConsoleInfra\Command\SynchronizeUsernamesCommand::class);
+            }
         }
     }
 
@@ -87,7 +107,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         if ($container->hasDefinition('data_collector.security')) {
             $container->getDefinition('data_collector.security')
-                ->setClass(Security\DataCollector::class)
+                ->setClass(SecurityInfra\DataCollector::class)
                 ->setArgument('$repository', new Reference(UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
                 ->setArgument('$factory', new Reference(EntityFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
         }
@@ -105,41 +125,49 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         foreach ([
             UserRepository::class => $classMapping[User::class],
+            UsernameRepository::class => $config['username_lookup'] ? Username::class : null,
             UserAttributeValueRepository::class => $classMapping[UserAttributeValue::class] ?? null,
             UserRoleRepository::class => $classMapping[UserRole::class] ?? null,
             UserSecondaryEmailRepository::class => $classMapping[UserSecondaryEmail::class] ?? null,
         ] as $repository => $class) {
             if (null === $class) {
-                $container->removeDefinition($repository);
+                ContainerHelper::removeDefinitionWithAliases($container, $repository);
                 continue;
             }
 
             ($definition = $container->getDefinition($repository))
                 ->setArgument('$class', $class);
 
-            if (UserRepository::class === $repository && null !== ($credentialType = (new \ReflectionMethod($class, 'getCredential'))->getReturnType())) {
-                if ($credentialType->isBuiltin() || !is_subclass_of($credentialClass = $credentialType->getName(), CredentialInterface::class)) {
-                    throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $class, CredentialInterface::class, $credentialType->getName()));
-                }
-                if ($credentialType->allowsNull()) {
-                    throw new \LogicException(sprintf('Method "%s::getCredential()" cannot be null-able.', $class));
-                }
-
-                $definition->setArgument('$fieldMapping', ['username' => 'credential.'.$credentialClass::getUsernameField()]);
+            if (UserRepository::class === $repository && null !== $config['username_field']) {
+                $definition->setArgument('$fieldMapping', ['username' => $config['username_field']]);
             }
+
+            if (UsernameRepository::class === $repository) {
+                $definition->setArgument('$targetMapping', $config['username_lookup']);
+            }
+        }
+
+        if ($config['username_lookup']) {
+            $container->getDefinition(UsernameListener::class)
+                ->setArgument('$mapping', $config['username_lookup']);
+        } else {
+            $container->removeDefinition(UsernameListener::class);
         }
     }
 
-    private static function getDoctrineMappingFiles(ContainerBuilder $container): array
+    private static function getDoctrineMappingFiles(array $config, ContainerBuilder $container): array
     {
         $files = glob(($baseDir = dirname((new \ReflectionClass(UserIdInterface::class))->getFileName()).'/Infra/Doctrine/Resources/dist-mapping').'/*.orm.xml');
+        $files = array_flip($files);
 
         if (!ContainerHelper::hasBundle($container, MsgPhpEavBundle::class)) {
-            $files = array_flip($files);
             unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
-            $files = array_values(array_flip($files));
         }
 
-        return $files;
+        if (!$config['username_lookup']) {
+            unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
+        }
+
+        return array_values(array_flip($files));
     }
 }

@@ -11,6 +11,10 @@ composer require msgphp/user-bundle
 ## Features
 
 - Symfony 3.4 / 4.0 ready
+- Doctrine persistence
+- Symfony console commands
+- Symfony security infrastructure
+- Symfony validators
 - Credential independent (supports e-mail, nickname, etc.)
 - Disabled / enabled users
 - User roles
@@ -44,12 +48,12 @@ And be done.
 
 ## Usage
 
-### With `DoctrineBundle` + `doctrine/orm`
+### With `doctrine/orm`
 
 Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered as a service. Corresponding domain interfaces
 from  `MsgPhp\User\Repository\*` are aliased.
 
-Minimal configuration:
+Minimal `DoctrineBundle` configuration:
 
 ```yaml
 # config/packages/doctrine.yaml
@@ -83,7 +87,7 @@ security:
             anonymous: ~
 ```
 
-- Requires `DoctrineBundle` and `doctrine/orm`, or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
+- Requires `doctrine/orm` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
 
 In practice the security user is decoupled from your domain entity user. An approach described
 [here](https://stovepipe.systems/post/decoupling-your-security-user).
@@ -91,24 +95,13 @@ In practice the security user is decoupled from your domain entity user. An appr
 - `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
 - `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
 
+### With `symfony/console`
+
+Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
+
 ### With `symfony/validator`
 
 Validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.
-
-```php
-<?php
-
-use MsgPhp\User\Infra\Validator;
-
-class MyClass
-{
-    /** @Validator\ExistingUsername() */
-    public $currentUsername;
-
-    /** @Validator\UniqueUsername() */
-    public $availableUsername;
-}
-```
 
 ## Documentation
 

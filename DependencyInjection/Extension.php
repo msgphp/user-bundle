@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\Factory\EntityFactoryInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
@@ -57,13 +57,19 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $bundles = ContainerHelper::getBundles($container);
 
         // persistence infra
-        if (isset($bundles[DoctrineBundle::class])) {
-            $this->prepareDoctrineBundle($config, $loader, $container);
+        if (class_exists(DoctrineOrmVersion::class)) {
+            $this->prepareDoctrineOrm($config, $loader, $container);
         }
 
         // framework infra
         if (class_exists(Security::class)) {
             $loader->load('security.php');
+
+            if (!$container->has(Repository\UserRepositoryInterface::class)) {
+                $container->removeDefinition(SecurityInfra\SecurityUserProvider::class);
+                $container->removeDefinition(SecurityInfra\UserParamConverter::class);
+                $container->removeDefinition(SecurityInfra\UserValueResolver::class);
+            }
         }
 
         if (class_exists(Validation::class)) {
@@ -107,12 +113,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
     }
 
-    private function prepareDoctrineBundle(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    private function prepareDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
     {
-        if (!ContainerHelper::isDoctrineOrmEnabled($container)) {
-            return;
-        }
-
         $loader->load('doctrine.php');
 
         $classMapping = $config['class_mapping'];

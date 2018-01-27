@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
+use MsgPhp\Domain\Entity\Features;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ConfigHelper;
-use MsgPhp\User\{CredentialInterface, Entity, UserId, UserIdInterface};
+use MsgPhp\User\{Command, CredentialInterface, Entity, UserId, UserIdInterface};
 use MsgPhp\User\Infra\Uuid as UuidInfra;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -15,29 +16,38 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  */
 final class Configuration implements ConfigurationInterface
 {
-    public const IDENTITY_MAP = [
-        Entity\UserAttributeValue::class => ['user', 'attributeValue'],
-        Entity\User::class => 'id',
-        Entity\UserRole::class => ['user', 'role'],
-        Entity\UserSecondaryEmail::class => ['user', 'email'],
-    ];
-    public const DATA_TYPE_MAP = [
-        UserIdInterface::class => [
-            UserId::class => ConfigHelper::NATIVE_DATA_TYPES,
-            UuidInfra\UserId::class => ConfigHelper::UUID_DATA_TYPES,
-        ],
-    ];
     public const REQUIRED_AGGREGATE_ROOTS = [
         Entity\User::class => UserIdInterface::class,
     ];
     public const OPTIONAL_AGGREGATE_ROOTS = [];
     public const AGGREGATE_ROOTS = self::REQUIRED_AGGREGATE_ROOTS + self::OPTIONAL_AGGREGATE_ROOTS;
+    public const IDENTITY_MAPPING = [
+        Entity\UserAttributeValue::class => ['user', 'attributeValue'],
+        Entity\User::class => 'id',
+        Entity\Username::class => ['user', 'username'],
+        Entity\UserRole::class => ['user', 'role'],
+        Entity\UserSecondaryEmail::class => ['user', 'email'],
+    ];
+    public const DATA_TYPE_MAPPING = [
+        UserIdInterface::class => [
+            UserId::class => ConfigHelper::NATIVE_DATA_TYPES,
+            UuidInfra\UserId::class => ConfigHelper::UUID_DATA_TYPES,
+        ],
+    ];
+    private const COMMAND_MAPPING = [
+        Entity\User::class => [
+            Features\CanBeEnabled::class => [
+                Command\DisableUserCommand::class,
+                Command\EnableUserCommand::class,
+            ],
+        ],
+    ];
 
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder();
-        $requiredEntities = array_keys(self::REQUIRED_AGGREGATE_ROOTS);
         $availableIds = array_values(self::AGGREGATE_ROOTS);
+        $requiredEntities = array_keys(self::REQUIRED_AGGREGATE_ROOTS);
 
         $treeBuilder->root(Extension::ALIAS)
             ->append(
@@ -46,7 +56,7 @@ final class Configuration implements ConfigurationInterface
                 })
             )
             ->append(
-                ConfigHelper::createClassMappingNode('data_type_mapping', [], function ($value) use ($availableIds) {
+                ConfigHelper::createClassMappingNode('data_type_mapping', [], function ($value) use ($availableIds): array {
                     if (!is_array($value)) {
                         $value = array_fill_keys($availableIds, $value);
                     } else {
@@ -54,8 +64,10 @@ final class Configuration implements ConfigurationInterface
                     }
 
                     return $value;
-                })
-                ->addDefaultChildrenIfNoneSet($availableIds)
+                })->addDefaultChildrenIfNoneSet($availableIds)
+            )
+            ->append(
+                ConfigHelper::createClassMappingNode('commands', [], null, true, 'boolean')
             )
             ->children()
                 ->arrayNode('username_lookup')
@@ -71,7 +83,6 @@ final class Configuration implements ConfigurationInterface
             ->validate()
                 ->always()
                 ->then(function (array $config): array {
-                    $userClass = $config['class_mapping'][Entity\User::class];
                     $usernameLookup = [];
                     foreach ($config['username_lookup'] as &$value) {
                         if (isset($config['class_mapping'][$value['target']])) {
@@ -86,16 +97,31 @@ final class Configuration implements ConfigurationInterface
                     }
                     unset($value);
 
-                    if (isset($usernameLookup[$userClass])) {
-                        throw new \LogicException(sprintf('Username lookup mapping for "%s" cannot be overwritten.', $userClass));
-                    }
+                    $userClass = $config['class_mapping'][Entity\User::class];
+                    $usernameField = self::getUsernameField($userClass);
 
-                    if (null !== ($usernameField = self::getUsernameField($userClass)) && $usernameLookup) {
-                        $usernameLookup[$userClass][] = ['target' => $userClass, 'field' => $usernameField];
+                    if ($usernameLookup) {
+                        if (isset($usernameLookup[$userClass])) {
+                            throw new \LogicException(sprintf('Username lookup mapping for "%s" cannot be overwritten.', $userClass));
+                        }
+
+                        if (null !== $usernameField) {
+                            $usernameLookup[$userClass][] = ['target' => $userClass, 'field' => $usernameField];
+                        }
+
+                        if (!isset($config['class_mapping'][Entity\Username::class])) {
+                            $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
+                        }
+
+                        if (isset($usernameLookup[$usernameClass = $config['class_mapping'][Entity\Username::class]])) {
+                            throw new \LogicException(sprintf('Username lookup mapping for "%s" is not applicable.', $usernameClass));
+                        }
                     }
 
                     $config['username_field'] = $usernameField;
                     $config['username_lookup'] = $usernameLookup;
+
+                    ConfigHelper::resolveCommandMapping($config['class_mapping'], self::COMMAND_MAPPING, $config['commands']);
 
                     return $config;
                 })

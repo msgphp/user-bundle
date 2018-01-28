@@ -111,7 +111,7 @@ security:
 
 Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
 
-- Requires `DoctrineBundl + doctrine/orme`
+- Requires `DoctrineBundle + doctrine/orm`
 - Requires `SimpleBusCommandBusBundle`
 
 ### With [`symfony/validator`](https://github.com/symfony/validator)

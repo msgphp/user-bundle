@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
+use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\Factory\EntityFactoryInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, Entity, Repository, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
-use SimpleBus\Message\Bus\MessageBus;
+use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
+use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
@@ -21,7 +23,6 @@ use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -56,12 +57,12 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [DoctrineInfra\EntityFieldsMapping::class]);
 
         // persistence infra
-        if (class_exists(DoctrineOrmVersion::class)) {
+        if (class_exists(DoctrineOrmVersion::class) && ContainerHelper::hasBundle($container, DoctrineBundle::class)) {
             $this->prepareDoctrineOrm($config, $loader, $container);
         }
 
         // message infra
-        if (interface_exists(MessageBus::class)) {
+        if (ContainerHelper::hasBundle($container, SimpleBusCommandBusBundle::class)) {
             $loader->load('message.php');
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
@@ -75,7 +76,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         // framework infra
-        if (class_exists(Security::class)) {
+        if (ContainerHelper::hasBundle($container, SecurityBundle::class)) {
             $loader->load('security.php');
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [

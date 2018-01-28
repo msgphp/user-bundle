@@ -48,12 +48,12 @@ And be done.
 
 ## Usage
 
-### With `doctrine/orm`
+### With [`DoctrineBundle`](https://github.com/doctrine/DoctrineBundle)
 
 Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered as a service. Corresponding domain interfaces
 from  `MsgPhp\User\Repository\*` are aliased.
 
-Minimal `DoctrineBundle` configuration:
+Minimal configuration:
 
 ```yaml
 # config/packages/doctrine.yaml
@@ -67,17 +67,17 @@ doctrine:
                 prefix: App\Entity
 ```
 
-### With `simple-bus/message-bus`
+- Requires `doctrine/orm`
+
+### With [`SimpleBusCommandBusBundle`](https://github.com/SimpleBus/SymfonyBridge)
 
 Command handlers from `MsgPhp\User\Command\*` are registered as a service.
 
-- Suggests `simple-bus/symfony-bridge` to setup a standard command and event bus
+- Requires `DoctrineBundle + doctrine/orm`
 
-### With `symfony/security-core`
+### With [`SecurityBundle`](https://github.com/symfony/security-bundle)
 
 Security infrastructure from `MsgPhp\User\Infra\Security\*` is registered as a service.
-
-- Suggests `sensio/framework-extra-bundle` to enable the parameter converter
 
 In practice the security user is decoupled from your domain entity user. An approach described
 [here](https://stovepipe.systems/post/decoupling-your-security-user).
@@ -85,7 +85,7 @@ In practice the security user is decoupled from your domain entity user. An appr
 - `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
 - `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
 
-Minimal `SecurityBundle` configuration:
+Minimal configuration:
 
 ```yaml
 # config/packages/security.yaml
@@ -103,15 +103,21 @@ security:
             anonymous: ~
 ```
 
-- Requires `doctrine/orm` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
+- Requires `DoctrineBundle + doctrine/orm`
+- Suggests `SensioFrameworkExtraBundle` to enable the parameter converter
 
-### With `symfony/console`
+### With [`symfony/console`](https://github.com/symfony/console)
 
 Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
 
-### With `symfony/validator`
+- Requires `DoctrineBundl + doctrine/orme`
+- Requires `SimpleBusCommandBusBundle`
+
+### With [`symfony/validator`](https://github.com/symfony/validator)
 
 Validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.
+
+- Requires `DoctrineBundle + doctrine/orm`
 
 ## Documentation
 

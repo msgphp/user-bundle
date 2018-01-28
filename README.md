@@ -67,9 +67,25 @@ doctrine:
                 prefix: App\Entity
 ```
 
-### With `SecurityBundle`
+### With `simple-bus/message-bus`
 
-Minimal configuration:
+Command handlers from `MsgPhp\User\Command\*` are registered as a service.
+
+- Suggests `simple-bus/symfony-bridge` to setup a standard command and event bus
+
+### With `symfony/security-core`
+
+Security infrastructure from `MsgPhp\User\Infra\Security\*` is registered as a service.
+
+- Suggests `sensio/framework-extra-bundle` to enable the parameter converter
+
+In practice the security user is decoupled from your domain entity user. An approach described
+[here](https://stovepipe.systems/post/decoupling-your-security-user).
+
+- `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
+- `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
+
+Minimal `SecurityBundle` configuration:
 
 ```yaml
 # config/packages/security.yaml
@@ -88,12 +104,6 @@ security:
 ```
 
 - Requires `doctrine/orm` or a `MsgPhp\User\Repository\UserRepositoryInterface` service/alias
-
-In practice the security user is decoupled from your domain entity user. An approach described
-[here](https://stovepipe.systems/post/decoupling-your-security-user).
-
-- `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
-- `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
 
 ### With `symfony/console`
 

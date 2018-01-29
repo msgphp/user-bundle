@@ -6,7 +6,7 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\ORM\Version as DoctrineOrmVersion;
-use MsgPhp\Domain\Factory\EntityFactoryInterface;
+use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, Entity, Repository, UserIdInterface};
@@ -69,8 +69,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 Command\Handler\DisableUserHandler::class,
                 Command\Handler\EnableUserHandler::class,
             ]);
-            ContainerHelper::removeDisabledCommandMessages($container, $config['commands']);
-            ContainerHelper::registerEventMessages($container, array_map(function (string $file): string {
+            ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
+            ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {
                 return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
             }, glob(dirname(ContainerHelper::getClassReflection($container, UserIdInterface::class)->getFileName()).'/Event/*Event.php')));
         }
@@ -129,7 +129,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $container->findDefinition('data_collector.security')
                 ->setClass(SecurityInfra\DataCollector::class)
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
-                ->setArgument('$factory', new Reference(EntityFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
+                ->setArgument('$factory', new Reference(EntityAwareFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
         }
     }
 

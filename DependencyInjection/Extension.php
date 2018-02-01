@@ -7,6 +7,7 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
+use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, Entity, Repository, UserIdInterface};
@@ -17,6 +18,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
@@ -66,6 +68,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $loader->load('message.php');
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
+                Command\Handler\CreateUserHandler::class,
                 Command\Handler\DisableUserHandler::class,
                 Command\Handler\EnableUserHandler::class,
             ]);
@@ -98,8 +101,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (class_exists(ConsoleEvents::class)) {
             $loader->load('console.php');
 
-            ContainerHelper::removeIf($container, !$container->has(Repository\UsernameRepositoryInterface::class), [
-                ConsoleInfra\Command\SynchronizeUsernamesCommand::class,
+            ContainerHelper::removeIf($container, !$container->has(Command\Handler\CreateUserHandler::class), [
+                ConsoleInfra\Command\CreateUserCommand::class,
             ]);
             ContainerHelper::removeIf($container, !$container->has(Command\Handler\DisableUserHandler::class), [
                 ConsoleInfra\Command\DisableUserCommand::class,
@@ -107,6 +110,19 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ContainerHelper::removeIf($container, !$container->has(Command\Handler\EnableUserHandler::class), [
                 ConsoleInfra\Command\EnableUserCommand::class,
             ]);
+            ContainerHelper::removeIf($container, !$container->has(Repository\UsernameRepositoryInterface::class), [
+                ConsoleInfra\Command\SynchronizeUsernamesCommand::class,
+            ]);
+
+            if ($container->hasDefinition(ConsoleInfra\Command\CreateUserCommand::class)) {
+                $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
+                    ->setArgument('$contextBuilder', $container->register(uniqid($class = BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class), $class)
+                        ->setPublic(false)
+                        ->setArgument('$class', $config['class_mapping'][Entity\User::class])
+                        ->setArgument('$method', '__construct')
+                        ->setArgument('$elementProviders', new TaggedIteratorArgument('msgphp.console.context_element_provider'))
+                        ->setArgument('$classMapping', $config['class_mapping']));
+            }
         }
     }
 

@@ -122,6 +122,7 @@ final class Configuration implements ConfigurationInterface
                     $config['username_lookup'] = $usernameLookup;
                     $config['commands'] += [
                         Command\CreateUserCommand::class => true,
+                        Command\DeleteUserCommand::class => true,
                     ];
 
                     ConfigHelper::resolveCommandMapping($config['class_mapping'], self::COMMAND_MAPPING, $config['commands']);

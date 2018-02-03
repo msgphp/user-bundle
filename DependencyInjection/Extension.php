@@ -10,7 +10,7 @@ use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
 use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\{ConfigHelper, ContainerHelper};
 use MsgPhp\EavBundle\MsgPhpEavBundle;
-use MsgPhp\User\{Command, Entity, Repository, UserIdInterface};
+use MsgPhp\User\{Command, CredentialInterface, Entity, Repository, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -18,7 +18,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
@@ -68,6 +67,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $loader->load('message.php');
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
+                Command\Handler\ChangeUserCredentialHandler::class,
                 Command\Handler\CreateUserHandler::class,
                 Command\Handler\DeleteUserHandler::class,
                 Command\Handler\DisableUserHandler::class,
@@ -102,6 +102,9 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (class_exists(ConsoleEvents::class)) {
             $loader->load('console.php');
 
+            ContainerHelper::removeIf($container, !$container->has(Command\Handler\ChangeUserCredentialHandler::class), [
+                ConsoleInfra\Command\ChangeUserCredentialCommand::class,
+            ]);
             ContainerHelper::removeIf($container, !$container->has(Command\Handler\CreateUserHandler::class), [
                 ConsoleInfra\Command\CreateUserCommand::class,
             ]);
@@ -118,14 +121,20 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 ConsoleInfra\Command\SynchronizeUsernamesCommand::class,
             ]);
 
+            $container->getDefinition(BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class)
+                ->setArgument('$classMapping', $config['class_mapping']);
+
             if ($container->hasDefinition(ConsoleInfra\Command\CreateUserCommand::class)) {
                 $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
-                    ->setArgument('$contextBuilder', $container->register(uniqid($class = BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class), $class)
-                        ->setPublic(false)
-                        ->setArgument('$class', $config['class_mapping'][Entity\User::class])
-                        ->setArgument('$method', '__construct')
-                        ->setArgument('$elementProviders', new TaggedIteratorArgument('msgphp.console.context_element_provider'))
-                        ->setArgument('$classMapping', $config['class_mapping']));
+                    ->setArgument('$contextBuilder', ContainerHelper::registerAnonymous($container, BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class, true)
+                        ->setArgument('$class', $config['class_mapping'][Entity\User::class]));
+            }
+
+            if ($container->hasDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)) {
+                $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
+                    ->setArgument('$contextBuilder', ContainerHelper::registerAnonymous($container, BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class, true)
+                        ->setArgument('$class', $config['class_mapping'][CredentialInterface::class])
+                        ->setArgument('$flags', BaseConsoleInfra\ContextBuilder\ClassContextBuilder::ALWAYS_OPTIONAL | BaseConsoleInfra\ContextBuilder\ClassContextBuilder::NO_DEFAULTS));
             }
         }
     }

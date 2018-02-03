@@ -28,7 +28,7 @@ return function (ContainerConfigurator $container) use ($reflector): void {
         ->set(UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::loadClassMetadata])
-            ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::preFlush])
+            ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::postFlush])
     ;
 
     foreach (glob($repositories) as $file) {

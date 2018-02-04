@@ -24,6 +24,7 @@ use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Form\Form;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -88,6 +89,10 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 SecurityInfra\UserParamConverter::class,
                 SecurityInfra\UserValueResolver::class,
             ]);
+        }
+
+        if (class_exists(Form::class)) {
+            $loader->load('form.php');
         }
 
         if (class_exists(Validation::class)) {

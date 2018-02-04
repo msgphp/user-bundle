@@ -114,6 +114,10 @@ Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a 
 - Requires `DoctrineBundle + doctrine/orm`
 - Requires `SimpleBusCommandBusBundle`
 
+### With [`symfony/form`](https://github.com/symfony/form)
+
+Form types from `MsgPhp\User\Infra\Form\Type\*` are registered as a service.
+
 ### With [`symfony/validator`](https://github.com/symfony/validator)
 
 Validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.

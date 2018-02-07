@@ -36,6 +36,9 @@ final class Configuration implements ConfigurationInterface
     ];
     private const COMMAND_MAPPING = [
         Entity\User::class => [
+            Features\CanBeConfirmed::class => [
+                Command\ConfirmUserCommand::class,
+            ],
             Features\CanBeEnabled::class => [
                 Command\DisableUserCommand::class,
                 Command\EnableUserCommand::class,

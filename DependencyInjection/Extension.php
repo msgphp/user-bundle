@@ -69,6 +69,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
                 Command\Handler\ChangeUserCredentialHandler::class,
+                Command\Handler\ConfirmUserHandler::class,
                 Command\Handler\CreateUserHandler::class,
                 Command\Handler\DeleteUserHandler::class,
                 Command\Handler\DisableUserHandler::class,
@@ -109,6 +110,9 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
             ContainerHelper::removeIf($container, !$container->has(Command\Handler\ChangeUserCredentialHandler::class), [
                 ConsoleInfra\Command\ChangeUserCredentialCommand::class,
+            ]);
+            ContainerHelper::removeIf($container, !$container->has(Command\Handler\ConfirmUserHandler::class), [
+                ConsoleInfra\Command\ConfirmUserCommand::class,
             ]);
             ContainerHelper::removeIf($container, !$container->has(Command\Handler\CreateUserHandler::class), [
                 ConsoleInfra\Command\CreateUserCommand::class,

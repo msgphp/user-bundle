@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp;
 
-use MsgPhp\User\Infra\Form\Type\HashedPasswordType;
+use MsgPhp\User\Infra\Form;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return function (ContainerConfigurator $container): void {
@@ -14,6 +14,6 @@ return function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private()
 
-        ->set(HashedPasswordType::class)
+        ->set(Form\Type\HashedPasswordType::class)
     ;
 };

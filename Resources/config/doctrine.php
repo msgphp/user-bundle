@@ -6,7 +6,7 @@ namespace MsgPhp;
 
 use Doctrine\ORM\Events as DoctrineOrmEvents;
 use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
-use MsgPhp\User\Infra\Doctrine\Event\UsernameListener;
+use MsgPhp\User\Infra\Doctrine;
 use MsgPhp\User\UserIdInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
@@ -25,7 +25,7 @@ return function (ContainerConfigurator $container) use ($reflector): void {
 
         ->load($ns = 'MsgPhp\\User\\Infra\\Doctrine\\Repository\\', $repositories = $baseDir.'/Infra/Doctrine/Repository/*Repository.php')
 
-        ->set(UsernameListener::class)
+        ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::loadClassMetadata])
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::postFlush])

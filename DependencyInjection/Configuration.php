@@ -43,6 +43,9 @@ final class Configuration implements ConfigurationInterface
                 Command\DisableUserCommand::class,
                 Command\EnableUserCommand::class,
             ],
+            Entity\Features\ResettablePassword::class => [
+                Command\RequestUserPasswordCommand::class,
+            ],
         ],
     ];
 

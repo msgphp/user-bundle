@@ -74,6 +74,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 Command\Handler\DeleteUserHandler::class,
                 Command\Handler\DisableUserHandler::class,
                 Command\Handler\EnableUserHandler::class,
+                Command\Handler\RequestUserPasswordHandler::class,
             ]);
             ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
             ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {

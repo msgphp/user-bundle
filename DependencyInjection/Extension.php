@@ -164,8 +164,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
     public function process(ContainerBuilder $container): void
     {
-        if ($container->has('data_collector.security')) {
-            $container->findDefinition('data_collector.security')
+        if ($container->hasDefinition('data_collector.security')) {
+            $container->getDefinition('data_collector.security')
                 ->setClass(SecurityInfra\DataCollector::class)
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
                 ->setArgument('$factory', new Reference(EntityAwareFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
@@ -176,38 +176,28 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader->load('doctrine.php');
 
-        $classMapping = $config['class_mapping'];
-
-        foreach ([
-            DoctrineInfra\Repository\UserRepository::class => $classMapping[Entity\User::class],
-            DoctrineInfra\Repository\UsernameRepository::class => $config['username_lookup'] ? $classMapping[Entity\Username::class] : null,
-            DoctrineInfra\Repository\UserAttributeValueRepository::class => $classMapping[Entity\UserAttributeValue::class] ?? null,
-            DoctrineInfra\Repository\UserRoleRepository::class => $classMapping[Entity\UserRole::class] ?? null,
-            DoctrineInfra\Repository\UserSecondaryEmailRepository::class => $classMapping[Entity\UserSecondaryEmail::class] ?? null,
-        ] as $repository => $class) {
-            if (null === $class) {
-                ContainerHelper::removeDefinitionWithAliases($container, $repository);
-                continue;
-            }
-
-            ($definition = $container->getDefinition($repository))
-                ->setArgument('$class', $class);
-
-            if (DoctrineInfra\Repository\UserRepository::class === $repository && null !== $config['username_field']) {
-                $definition->setArgument('$usernameField', $config['username_field']);
-            }
-
-            if (DoctrineInfra\Repository\UsernameRepository::class === $repository) {
-                $definition->setArgument('$targetMapping', $config['username_lookup']);
-            }
+        if (null !== $config['username_field']) {
+            $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
+                ->setArgument('$usernameField', $config['username_field']);
         }
 
         if ($config['username_lookup']) {
             $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
                 ->setArgument('$mapping', $config['username_lookup']);
+
+            $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
+                ->setArgument('$targetMapping', $config['username_lookup']);
         } else {
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
         }
+
+        ContainerHelper::configureDoctrineOrmRepositories($container, $config['class_mapping'], [
+            DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
+            DoctrineInfra\Repository\UsernameRepository::class => $config['username_lookup'] ? Entity\Username::class : null,
+            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
+            DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
+            DoctrineInfra\Repository\UserSecondaryEmailRepository::class => Entity\UserSecondaryEmail::class,
+        ]);
     }
 
     private static function getDoctrineMappingFiles(array $config, ContainerBuilder $container): array

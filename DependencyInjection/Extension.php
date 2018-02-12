@@ -194,7 +194,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 ->setArgument('$class', $class);
 
             if (DoctrineInfra\Repository\UserRepository::class === $repository && null !== $config['username_field']) {
-                $definition->setArgument('$fieldMapping', ['username' => $config['username_field']]);
+                $definition->setArgument('$usernameField', $config['username_field']);
             }
 
             if (DoctrineInfra\Repository\UsernameRepository::class === $repository) {

@@ -53,7 +53,7 @@ final class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
         $ids = array_values(self::AGGREGATE_ROOTS);
-        $entities = array_keys(self::AGGREGATE_ROOTS);
+        $entities = array_keys(self::IDENTITY_MAPPING);
         $requiredEntities = array_keys(self::REQUIRED_AGGREGATE_ROOTS);
 
         $treeBuilder->root(Extension::ALIAS)

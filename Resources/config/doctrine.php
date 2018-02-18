@@ -9,7 +9,6 @@ use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
 use MsgPhp\User\Infra\Doctrine;
 use MsgPhp\User\UserIdInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /** @var ContainerBuilder $container */
@@ -33,11 +32,7 @@ return function (ContainerConfigurator $container) use ($reflector): void {
 
     foreach (glob($repositories) as $file) {
         foreach ($reflector($repository = $ns.basename($file, '.php'))->getInterfaceNames() as $interface) {
-            try {
-                $services->get($interface);
-            } catch (ServiceNotFoundException $e) {
-                $services->alias($interface, $repository);
-            }
+            $services->alias($interface, $repository);
         }
     }
 };

@@ -137,13 +137,13 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             if ($container->hasDefinition(ConsoleInfra\Command\CreateUserCommand::class)) {
                 $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
                     ->setArgument('$contextBuilder', ContainerHelper::registerAnonymous($container, BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class, true)
-                        ->setArgument('$class', $config['class_mapping'][Entity\User::class]));
+                        ->setArgument('$class', Entity\User::class));
             }
 
             if ($container->hasDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)) {
                 $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
                     ->setArgument('$contextBuilder', ContainerHelper::registerAnonymous($container, BaseConsoleInfra\ContextBuilder\ClassContextBuilder::class, true)
-                        ->setArgument('$class', $config['class_mapping'][CredentialInterface::class])
+                        ->setArgument('$class', CredentialInterface::class)
                         ->setArgument('$flags', BaseConsoleInfra\ContextBuilder\ClassContextBuilder::ALWAYS_OPTIONAL | BaseConsoleInfra\ContextBuilder\ClassContextBuilder::NO_DEFAULTS));
             }
         }

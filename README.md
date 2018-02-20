@@ -1,4 +1,4 @@
-# User Bundle
+# User bundle
 
 A new Symfony bundle for basic user management.
 

@@ -89,6 +89,10 @@ final class Configuration implements ConfigurationInterface
             ->end()
             ->validate()
                 ->always(function (array $config): array {
+                    if (isset($config['class_mapping'][Entity\Username::class])) {
+                        throw new \LogicException(sprintf('Class mapping for "%s" is not applicable.', Entity\Username::class));
+                    }
+
                     $usernameLookup = [];
                     foreach ($config['username_lookup'] as &$value) {
                         if (isset($config['class_mapping'][$value['target']])) {
@@ -114,13 +118,11 @@ final class Configuration implements ConfigurationInterface
                             $usernameLookup[$userClass][] = ['target' => $userClass, 'field' => $userCredential['username_field']];
                         }
 
-                        if (!isset($config['class_mapping'][Entity\Username::class])) {
-                            $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
+                        if (isset($usernameLookup[Entity\Username::class])) {
+                            throw new \LogicException(sprintf('Username lookup mapping for "%s" is not applicable.', Entity\Username::class));
                         }
 
-                        if (isset($usernameLookup[$usernameClass = $config['class_mapping'][Entity\Username::class]])) {
-                            throw new \LogicException(sprintf('Username lookup mapping for "%s" is not applicable.', $usernameClass));
-                        }
+                        $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
                     }
 
                     $config['username_field'] = $userCredential['username_field'];

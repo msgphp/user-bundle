@@ -20,6 +20,7 @@ composer require msgphp/user-bundle
 - Symfony security infrastructure
 - Symfony validators
 - Credential independent (supports e-mail, nickname, etc.)
+- Multiple username / credential support
 - Disabled / enabled users
 - User roles
 - User attribute values

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MsgPhp;
 
 use Doctrine\ORM\Events as DoctrineOrmEvents;
-use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\User\Infra\Doctrine;
 use MsgPhp\User\UserIdInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

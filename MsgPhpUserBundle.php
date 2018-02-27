@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle;
 
-use MsgPhp\Domain\Infra\DependencyInjection\Bundle\BundleHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\BundleHelper;
 use MsgPhp\UserBundle\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;

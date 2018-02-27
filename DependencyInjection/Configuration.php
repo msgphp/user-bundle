@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\Entity\Features;
-use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ConfigHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
 use MsgPhp\User\{Command, CredentialInterface, Entity, UserId, UserIdInterface};
 use MsgPhp\User\Infra\Uuid as UuidInfra;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;

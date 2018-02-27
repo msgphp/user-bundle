@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp;
 
-use MsgPhp\Domain\Infra\DependencyInjection\Bundle\ContainerHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\User\UserIdInterface;
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

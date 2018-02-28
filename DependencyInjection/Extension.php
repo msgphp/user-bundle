@@ -181,6 +181,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
             $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
                 ->setArgument('$targetMapping', $config['username_lookup']);
+
+            $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
         } else {
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
         }

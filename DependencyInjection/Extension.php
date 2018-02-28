@@ -8,7 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
 use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
-use MsgPhp\Domain\Infra\DependencyInjection\{ConfigHelper, ContainerHelper};
+use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, CredentialInterface, Entity, Repository, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
@@ -48,9 +48,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
-
-        ConfigHelper::resolveResolveDataTypeMapping($container, $config['data_type_mapping']);
-        ConfigHelper::resolveClassMapping(Configuration::DATA_TYPE_MAPPING, $config['data_type_mapping'], $config['class_mapping']);
 
         $loader->load('services.php');
 
@@ -153,10 +150,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $config = $this->processConfiguration($this->getConfiguration($configs = $container->getExtensionConfig($this->getAlias()), $container), $configs);
 
-        ConfigHelper::resolveResolveDataTypeMapping($container, $config['data_type_mapping']);
-        ConfigHelper::resolveClassMapping(Configuration::DATA_TYPE_MAPPING, $config['data_type_mapping'], $config['class_mapping']);
-
-        ContainerHelper::configureDoctrineTypes($container, $config['data_type_mapping'], $config['class_mapping'], [
+        ContainerHelper::configureDoctrineTypes($container, $config['class_mapping'], $config['id_type_mapping'], [
             UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
         ]);
         ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);

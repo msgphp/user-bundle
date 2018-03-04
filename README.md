@@ -17,7 +17,7 @@ composer require msgphp/user-bundle
 ## Features
 
 - Symfony 3.4 / 4.0 ready
-- Doctrine persistence
+- Doctrine persistence (with built-in discriminator support)
 - Symfony console commands
 - Symfony security infrastructure
 - Symfony validators

@@ -32,6 +32,6 @@ return function (ContainerConfigurator $container): void {
 
     if (interface_exists(ParamConverterInterface::class)) {
         $services->set(Security\UserParamConverter::class)
-            ->tag('request.param_converter', ['priority' => 100]);
+            ->tag('request.param_converter', ['converter' => Security\UserParamConverter::NAME, 'priority' => 100]);
     }
 };

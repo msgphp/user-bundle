@@ -37,6 +37,9 @@ final class Configuration implements ConfigurationInterface
     ];
     private const COMMAND_MAPPING = [
         Entity\User::class => [
+            Command\CreateUserCommand::class => true,
+            Command\DeleteUserCommand::class => true,
+
             Features\CanBeConfirmed::class => [
                 Command\ConfirmUserCommand::class,
             ],
@@ -46,6 +49,14 @@ final class Configuration implements ConfigurationInterface
             ],
             Entity\Features\ResettablePassword::class => [
                 Command\RequestUserPasswordCommand::class,
+            ],
+        ],
+        Entity\UserEmail::class => [
+            Command\CreateUserEmailCommand::class => true,
+            Command\DeleteUserEmailCommand::class => true,
+
+            Features\CanBeConfirmed::class => [
+                Command\ConfirmUserEmailCommand::class,
             ],
         ],
     ];
@@ -66,10 +77,6 @@ final class Configuration implements ConfigurationInterface
             ->end()
             ->classMappingNode('commands')
                 ->typeOfValues('boolean')
-                ->defaultMapping([
-                    Command\CreateUserCommand::class => true,
-                    Command\DeleteUserCommand::class => true,
-                ])
             ->end()
             ->scalarNode('default_id_type')
                 ->defaultValue(ConfigHelper::DEFAULT_ID_TYPE)
@@ -134,13 +141,6 @@ final class Configuration implements ConfigurationInterface
 
                 if (null !== $userCredential['username_field'] && !isset($config['commands'][Command\ChangeUserCredentialCommand::class])) {
                     $config['commands'][Command\ChangeUserCredentialCommand::class] = true;
-                }
-
-                if (isset($config['class_mapping'][Entity\UserEmail::class])) {
-                    $config['commands'] += [
-                        Command\CreateUserEmailCommand::class => true,
-                        Command\DeleteUserEmailCommand::class => true,
-                    ];
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);

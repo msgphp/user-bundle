@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace MsgPhp;
-
 use MsgPhp\User\Password\PasswordHashingInterface;
 use MsgPhp\User\Infra\Security;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;

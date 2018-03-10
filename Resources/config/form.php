@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace MsgPhp;
-
 use MsgPhp\User\Infra\Form;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 

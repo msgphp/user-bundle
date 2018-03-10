@@ -11,7 +11,8 @@ use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, CredentialInterface, Entity, Repository, UserIdInterface};
-use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Twig as TwigInfra, Validator as ValidatorInfra};
+use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
+use MsgPhp\UserBundle\Twig\GlobalVariables;
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -31,6 +32,8 @@ use Twig\Environment as Twig;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
+ *
+ * @internal
  */
 final class Extension extends BaseExtension implements PrependExtensionInterface, CompilerPassInterface
 {
@@ -168,7 +171,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (ContainerHelper::hasBundle($container, TwigBundle::class)) {
             $container->prependExtensionConfig('twig', [
                 'globals' => [
-                    'msgphp_user' => '@'.TwigInfra\GlobalVariables::class,
+                    'msgphp_user' => '@'.GlobalVariables::class,
                 ],
             ]);
         }

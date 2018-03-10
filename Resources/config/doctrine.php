@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace MsgPhp;
-
 use Doctrine\ORM\Events as DoctrineOrmEvents;
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\User\Infra\Doctrine;

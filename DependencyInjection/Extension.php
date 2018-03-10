@@ -75,6 +75,10 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 Command\Handler\EnableUserHandler::class,
                 Command\Handler\RequestUserPasswordHandler::class,
             ]);
+            ContainerHelper::removeIf($container, !$container->has(Repository\UserEmailRepositoryInterface::class), [
+                Command\Handler\CreateUserEmailHandler::class,
+                Command\Handler\DeleteUserEmailHandler::class,
+            ]);
             ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
             ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {
                 return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
@@ -206,7 +210,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
             DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
             DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
-            DoctrineInfra\Repository\UserSecondaryEmailRepository::class => Entity\UserSecondaryEmail::class,
+            DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
         ]);
     }
 

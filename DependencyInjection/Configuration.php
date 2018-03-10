@@ -27,7 +27,7 @@ final class Configuration implements ConfigurationInterface
         Entity\User::class => ['id'],
         Entity\Username::class => ['user', 'username'],
         Entity\UserRole::class => ['user', 'role'],
-        Entity\UserSecondaryEmail::class => ['user', 'email'],
+        Entity\UserEmail::class => ['user', 'email'],
     ];
     public const DEFAULT_ID_CLASS_MAPPING = [
         UserIdInterface::class => UserId::class,
@@ -134,6 +134,13 @@ final class Configuration implements ConfigurationInterface
 
                 if (null !== $userCredential['username_field'] && !isset($config['commands'][Command\ChangeUserCredentialCommand::class])) {
                     $config['commands'][Command\ChangeUserCredentialCommand::class] = true;
+                }
+
+                if (isset($config['class_mapping'][Entity\UserEmail::class])) {
+                    $config['commands'] += [
+                        Command\CreateUserEmailCommand::class => true,
+                        Command\DeleteUserEmailCommand::class => true,
+                    ];
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);

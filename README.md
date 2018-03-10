@@ -23,10 +23,10 @@ composer require msgphp/user-bundle
 - Symfony validators
 - Credential independent (supports e-mail, nickname, etc.)
 - Multiple username / credential support
+- Primary and secondary user e-mails
 - Disabled / enabled users
 - User roles
 - User attribute values
-- User secondary e-mails
 
 ## Blog posts
 

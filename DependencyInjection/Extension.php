@@ -11,9 +11,10 @@ use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, CredentialInterface, Entity, Repository, UserIdInterface};
-use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
+use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Twig as TwigInfra, Validator as ValidatorInfra};
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
+use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
@@ -26,6 +27,7 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Validator\Validation;
+use Twig\Environment as Twig;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -103,6 +105,10 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ]);
         }
 
+        if (class_exists(Twig::class)) {
+            $loader->load('twig.php');
+        }
+
         if (class_exists(ConsoleEvents::class)) {
             $loader->load('console.php');
 
@@ -154,6 +160,14 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
         ]);
         ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);
+
+        if (ContainerHelper::hasBundle($container, TwigBundle::class)) {
+            $container->prependExtensionConfig('twig', [
+                'globals' => [
+                    'msgphp_user' => '@'.TwigInfra\GlobalVariables::class,
+                ],
+            ]);
+        }
     }
 
     public function process(ContainerBuilder $container): void

@@ -55,7 +55,7 @@ final class Configuration implements ConfigurationInterface
             ],
         ],
         Entity\UserEmail::class => [
-            Command\CreateUserEmailCommand::class => true,
+            Command\AddUserEmailCommand::class => true,
             Command\DeleteUserEmailCommand::class => true,
 
             Features\CanBeConfirmed::class => [

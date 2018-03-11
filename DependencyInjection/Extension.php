@@ -79,7 +79,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 Command\Handler\RequestUserPasswordHandler::class,
             ]);
             ContainerHelper::removeIf($container, !$container->has(Repository\UserEmailRepositoryInterface::class), [
-                Command\Handler\CreateUserEmailHandler::class,
+                Command\Handler\AddUserEmailHandler::class,
                 Command\Handler\DeleteUserEmailHandler::class,
             ]);
             ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);

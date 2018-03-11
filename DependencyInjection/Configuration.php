@@ -19,11 +19,9 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  */
 final class Configuration implements ConfigurationInterface
 {
-    public const REQUIRED_AGGREGATE_ROOTS = [
+    public const AGGREGATE_ROOTS = [
         Entity\User::class => UserIdInterface::class,
     ];
-    public const OPTIONAL_AGGREGATE_ROOTS = [];
-    public const AGGREGATE_ROOTS = self::REQUIRED_AGGREGATE_ROOTS + self::OPTIONAL_AGGREGATE_ROOTS;
     public const IDENTITY_MAPPING = [
         Entity\Role::class => ['name'],
         Entity\UserAttributeValue::class => ['user', 'attributeValue'],
@@ -62,6 +60,10 @@ final class Configuration implements ConfigurationInterface
                 Command\ConfirmUserEmailCommand::class,
             ],
         ],
+        Entity\UserRole::class => [
+            Command\AddUserRoleCommand::class => true,
+            Command\DeleteUserRoleCommand::class => true,
+        ],
     ];
 
     public function getConfigTreeBuilder(): TreeBuilder
@@ -71,7 +73,7 @@ final class Configuration implements ConfigurationInterface
 
         $children
             ->classMappingNode('class_mapping')
-                ->requireClasses(array_keys(self::REQUIRED_AGGREGATE_ROOTS))
+                ->requireClasses([Entity\User::class])
                 ->disallowClasses([CredentialInterface::class, Entity\Username::class])
                 ->groupClasses([Entity\Role::class, Entity\UserRole::class])
                 ->subClassValues()

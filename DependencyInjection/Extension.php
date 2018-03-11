@@ -209,6 +209,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         ContainerHelper::configureDoctrineOrmRepositories($container, [Entity\Username::class => Entity\Username::class] + $config['class_mapping'], [
+            DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
             DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
             DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
             DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,

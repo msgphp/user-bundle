@@ -25,6 +25,7 @@ final class Configuration implements ConfigurationInterface
     public const OPTIONAL_AGGREGATE_ROOTS = [];
     public const AGGREGATE_ROOTS = self::REQUIRED_AGGREGATE_ROOTS + self::OPTIONAL_AGGREGATE_ROOTS;
     public const IDENTITY_MAPPING = [
+        Entity\Role::class => ['name'],
         Entity\UserAttributeValue::class => ['user', 'attributeValue'],
         Entity\User::class => ['id'],
         Entity\Username::class => ['user', 'username'],
@@ -72,6 +73,7 @@ final class Configuration implements ConfigurationInterface
             ->classMappingNode('class_mapping')
                 ->requireClasses(array_keys(self::REQUIRED_AGGREGATE_ROOTS))
                 ->disallowClasses([CredentialInterface::class, Entity\Username::class])
+                ->groupClasses([Entity\Role::class, Entity\UserRole::class])
                 ->subClassValues()
             ->end()
             ->classMappingNode('id_type_mapping')

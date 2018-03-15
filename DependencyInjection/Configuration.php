@@ -141,7 +141,10 @@ final class Configuration implements ConfigurationInterface
                     }
                 }
 
-                $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
+                $config['class_mapping'] += [
+                    CredentialInterface::class => $userCredential['class'],
+                    Entity\Username::class => $usernameLookup ? Entity\Username::class : null,
+                ];
                 $config['username_field'] = $userCredential['username_field'];
                 $config['username_lookup'] = $usernameLookup;
 

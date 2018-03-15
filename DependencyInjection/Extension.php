@@ -217,13 +217,11 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
             $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
                 ->setArgument('$targetMapping', $config['username_lookup']);
-
-            $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
         } else {
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
         }
 
-        ContainerHelper::configureDoctrineOrmRepositories($container, [Entity\Username::class => Entity\Username::class] + $config['class_mapping'], [
+        ContainerHelper::configureDoctrineOrmRepositories($container, $config['class_mapping'], [
             DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
             DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
             DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
@@ -242,7 +240,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
         }
 
-        if (!$config['username_lookup']) {
+        if (null === $config['class_mapping'][Entity\Username::class]) {
             unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
         }
 

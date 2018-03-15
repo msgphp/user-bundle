@@ -97,6 +97,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $loader->load('security.php');
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
+                SecurityInfra\Jwt\SecurityUserProvider::class,
                 SecurityInfra\SecurityUserProvider::class,
                 SecurityInfra\UserParamConverter::class,
                 SecurityInfra\UserValueResolver::class,

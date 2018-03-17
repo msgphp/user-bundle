@@ -24,11 +24,11 @@ final class Configuration implements ConfigurationInterface
     ];
     public const IDENTITY_MAPPING = [
         Entity\Role::class => ['name'],
-        Entity\UserAttributeValue::class => ['user', 'attributeValue'],
+        Entity\UserAttributeValue::class => ['attributeValue'],
         Entity\User::class => ['id'],
-        Entity\Username::class => ['user', 'username'],
+        Entity\Username::class => ['username'],
         Entity\UserRole::class => ['user', 'role'],
-        Entity\UserEmail::class => ['user', 'email'],
+        Entity\UserEmail::class => ['email'],
     ];
     public const DEFAULT_ID_CLASS_MAPPING = [
         UserIdInterface::class => UserId::class,

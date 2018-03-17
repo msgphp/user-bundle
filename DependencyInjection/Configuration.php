@@ -52,6 +52,11 @@ final class Configuration implements ConfigurationInterface
                 Command\RequestUserPasswordCommand::class,
             ],
         ],
+        Entity\UserAttributeValue::class => [
+            Command\AddUserAttributeValueCommand::class => true,
+            Command\ChangeUserAttributeValueCommand::class => true,
+            Command\DeleteUserAttributeValueCommand::class => true,
+        ],
         Entity\UserEmail::class => [
             Command\AddUserEmailCommand::class => true,
             Command\DeleteUserEmailCommand::class => true,

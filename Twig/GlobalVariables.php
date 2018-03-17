@@ -54,6 +54,11 @@ final class GlobalVariables implements ServiceSubscriberInterface
         return $id;
     }
 
+    public function isUserType(User $user, string $class): bool
+    {
+        return $user instanceof $class;
+    }
+
     public static function getSubscribedServices(): array
     {
         return [

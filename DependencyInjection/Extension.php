@@ -245,7 +245,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
         }
 
-        if (null === $config['class_mapping'][Entity\Username::class]) {
+        if (!$config['username_lookup']) {
             unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
         }
 

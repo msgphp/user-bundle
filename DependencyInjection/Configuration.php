@@ -94,6 +94,7 @@ final class Configuration implements ConfigurationInterface
                 ->cannotBeEmpty()
             ->end()
             ->arrayNode('username_lookup')
+                ->requiresAtLeastOneElement()
                 ->arrayPrototype()
                     ->children()
                         ->scalarNode('target')
@@ -141,15 +142,17 @@ final class Configuration implements ConfigurationInterface
                         throw new \LogicException(sprintf('Username lookup mapping for "%s" cannot be overwritten.', $userClass));
                     }
 
-                    if (null !== $userCredential['username_field']) {
+                    if (isset($userCredential['username_field'])) {
                         $usernameLookup[$userClass][] = ['target' => $userClass, 'field' => $userCredential['username_field']];
                     }
+
+                    $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
                 }
 
-                $config['class_mapping'] += [
-                    CredentialInterface::class => $userCredential['class'],
-                    Entity\Username::class => $usernameLookup ? Entity\Username::class : null,
-                ];
+                if (isset($userCredential['class'])) {
+                    $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
+                }
+
                 $config['username_field'] = $userCredential['username_field'];
                 $config['username_lookup'] = $usernameLookup;
 

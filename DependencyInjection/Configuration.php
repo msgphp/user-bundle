@@ -24,7 +24,7 @@ final class Configuration implements ConfigurationInterface
     ];
     public const IDENTITY_MAPPING = [
         Entity\Role::class => ['name'],
-        Entity\UserAttributeValue::class => ['attributeValue'],
+        'Msgphp\\User\\Entity\\UserAttributeValue' => ['attributeValue'],
         Entity\User::class => ['id'],
         Entity\Username::class => ['username'],
         Entity\UserRole::class => ['user', 'role'],
@@ -52,7 +52,7 @@ final class Configuration implements ConfigurationInterface
                 Command\RequestUserPasswordCommand::class,
             ],
         ],
-        Entity\UserAttributeValue::class => [
+        'Msgphp\\User\\Entity\\UserAttributeValue' => [
             Command\AddUserAttributeValueCommand::class => true,
             Command\ChangeUserAttributeValueCommand::class => true,
             Command\DeleteUserAttributeValueCommand::class => true,

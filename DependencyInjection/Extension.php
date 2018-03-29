@@ -230,7 +230,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
             DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
             DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
-            DoctrineInfra\Repository\UserAttributeValueRepository::class => 'MsgPhp\\User\\Entity\\UserAttributeValue',
+            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
             DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
             DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
         ]);

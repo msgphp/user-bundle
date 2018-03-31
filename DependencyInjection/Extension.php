@@ -241,6 +241,14 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $baseDir = dirname(ContainerHelper::getClassReflection($container, UserIdInterface::class)->getFileName()).'/Infra/Doctrine/Resources/dist-mapping';
         $files = array_flip(glob($baseDir.'/*.orm.xml'));
 
+        if (!isset($config['class_mapping'][Entity\Role::class])) {
+            unset($files[$baseDir.'/User.Entity.Role.orm.xml'], $files[$baseDir.'/User.Entity.UserRole.orm.xml']);
+        }
+
+        if (!isset($config['class_mapping'][Entity\UserEmail::class])) {
+            unset($files[$baseDir.'/User.Entity.UserEmail.orm.xml']);
+        }
+
         if (!ContainerHelper::hasBundle($container, MsgPhpEavBundle::class)) {
             unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
         }

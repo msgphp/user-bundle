@@ -12,7 +12,7 @@ use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, CredentialInterface, Entity, Repository, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
-use MsgPhp\UserBundle\Twig\GlobalVariables;
+use MsgPhp\UserBundle\Twig;
 use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -28,7 +28,7 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Validator\Validation;
-use Twig\Environment as Twig;
+use Twig\Environment as TwigEnvironment;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -122,19 +122,12 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ]);
         }
 
-        if (class_exists(Twig::class)) {
+        if (class_exists(TwigEnvironment::class)) {
             $loader->load('twig.php');
         }
 
         if (class_exists(ConsoleEvents::class)) {
             $loader->load('console.php');
-
-            $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
-                ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
-                    $container,
-                    $config['class_mapping'][Entity\UserRole::class] ?? Entity\UserRole::class,
-                    BaseConsoleInfra\Context\ClassContextFactory::REUSE_DEFINITION
-                ));
 
             $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
                 ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
@@ -142,12 +135,28 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     $config['class_mapping'][Entity\User::class]
                 ));
 
-            $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
-                ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
-                    $container,
-                    $config['class_mapping'][CredentialInterface::class],
-                    BaseConsoleInfra\Context\ClassContextFactory::ALWAYS_OPTIONAL | BaseConsoleInfra\Context\ClassContextFactory::NO_DEFAULTS
-                ));
+            if (isset($config['class_mapping'][Entity\UserRole::class])) {
+                $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
+                    ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
+                        $container,
+                        $config['class_mapping'][Entity\UserRole::class],
+                        BaseConsoleInfra\Context\ClassContextFactory::REUSE_DEFINITION
+                    ));
+            } else {
+                $container->removeDefinition(ConsoleInfra\Command\AddUserRoleCommand::class);
+                $container->removeDefinition(ConsoleInfra\Command\DeleteUserRoleCommand::class);
+            }
+
+            if (isset($config['class_mapping'][CredentialInterface::class])) {
+                $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
+                    ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
+                        $container,
+                        $config['class_mapping'][CredentialInterface::class],
+                        BaseConsoleInfra\Context\ClassContextFactory::ALWAYS_OPTIONAL | BaseConsoleInfra\Context\ClassContextFactory::NO_DEFAULTS
+                    ));
+            } else {
+                $container->removeDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class);
+            }
 
             ContainerHelper::removeIf($container, !$container->has(Command\Handler\AddUserRoleHandler::class), [
                 ConsoleInfra\Command\AddUserRoleCommand::class,
@@ -191,7 +200,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (ContainerHelper::hasBundle($container, TwigBundle::class)) {
             $container->prependExtensionConfig('twig', [
                 'globals' => [
-                    'msgphp_user' => '@'.GlobalVariables::class,
+                    'msgphp_user' => '@'.Twig\GlobalVariables::class,
                 ],
             ]);
         }

@@ -38,7 +38,7 @@ composer require msgphp/user-bundle
 
 ```php
 <?php
-// config/packages/msgphp.php
+// config/packages/msgphp_user.php
 
 use MsgPhp\User\Entity\User;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -50,6 +50,14 @@ return function (ContainerConfigurator $container) {
         ],
     ]);
 };
+```
+
+### Feeling lazy?
+
+```bash
+composer require annot form validator twig security simple-bus/symfony-bridge orm
+composer require maker server --dev
+bin/console make:user
 ```
 
 And be done.

@@ -171,8 +171,18 @@ final class Configuration implements ConfigurationInterface
 
     private static function getUserCredential(string $userClass): array
     {
-        if (null === $credential = (new \ReflectionMethod($userClass, 'getCredential'))->getReturnType()) {
-            return ['class' => Entity\Credential\Anonymous::class, 'username_field' => null];
+        $reflection = new \ReflectionMethod($userClass, 'getCredential');
+
+        if (Entity\User::class === $reflection->getDeclaringClass()->getName()) {
+            return ['class' => null, 'username_field' => null];
+        }
+
+        if (null === $credential = $reflection->getReturnType()) {
+            throw new \LogicException(sprintf('Method "%s::getCredential()" must have a return type set.', $userClass));
+        }
+
+        if (Entity\Credential\Anonymous::class === $credential->getName()) {
+            return ['class' => null, 'username_field' => null];
         }
 
         if ($credential->isBuiltin() || !is_subclass_of($class = $credential->getName(), CredentialInterface::class)) {

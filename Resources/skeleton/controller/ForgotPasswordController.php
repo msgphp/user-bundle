@@ -17,8 +17,6 @@ $uses = [
     'use Twig\\Environment;',
 ];
 
-$userShortName = false === ($i = strrpos($userClass, '\\')) ? $userClass : substr($userClass, $i + 1);
-
 sort($uses);
 $uses = implode("\n", $uses);
 
@@ -48,7 +46,7 @@ final class ForgotPasswordController
         \$form->handleRequest(\$request);
 
         if (\$form->isSubmitted() && \$form->isValid()) {
-            \$user = \$em->getRepository(${userShortName}::class)->findOneBy(['credential.${fieldName}' => \$form->getData()['${fieldName}']]);
+            \$user = \$em->getRepository(${userShortClass}::class)->findOneBy(['credential.${fieldName}' => \$form->getData()['${fieldName}']]);
             \$bus->handle(new RequestUserPasswordCommand(\$user->getId()));
             \$flashBag->add('success', 'You\'re password is requested.');
 

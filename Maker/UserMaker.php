@@ -6,6 +6,7 @@ namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
+use MsgPhp\User\Infra\Security\UserRolesProviderInterface;
 use MsgPhp\User\{CredentialInterface, Entity, UserIdInterface};
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use SimpleBus\SymfonyBridge\Bus\CommandBus;
@@ -33,7 +34,11 @@ final class UserMaker implements MakerInterface
     private $credential;
     private $passwordReset = false;
     private $configs = [];
+    private $services = [];
     private $writes = [];
+
+    /** @var \ReflectionClass */
+    private $user;
 
     public function __construct(array $classMapping, string $projectDir)
     {
@@ -60,23 +65,25 @@ final class UserMaker implements MakerInterface
 
     public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator): void
     {
-        $this->credential = null;
+        $this->credential = $this->user = null;
         $this->passwordReset = false;
-        $this->configs = $this->writes = [];
+        $this->configs = $this->services = $this->writes = [];
 
         if (!isset($this->classMapping[Entity\User::class])) {
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
         }
 
-        $userClass = new \ReflectionClass($this->classMapping[Entity\User::class]);
+        $this->user = new \ReflectionClass($this->classMapping[Entity\User::class]);
 
-        $this->generateUser($userClass, $io);
-        $this->generateRole($userClass, $io);
+        $this->generateUser($io);
         $this->generateControllers($io);
 
-        if ($this->configs) {
-            $this->writes[] = [$this->projectDir.'/config/packages/msgphp_user.make.php', self::getSkeleton('config.php', ['config' => var_export(array_merge_recursive(...$this->configs), true)])];
-            $this->configs = [];
+        if ($this->configs || $this->services) {
+            $this->writes[] = [$this->projectDir.'/config/packages/msgphp_user.make.php', self::getSkeleton('config.php', [
+                'config' => var_export($this->configs ? array_merge_recursive(...$this->configs) : [], true),
+                'services' => $this->services,
+            ])];
+            $this->configs = $this->services = [];
         }
 
         $writeAll = count($this->writes) > 1 && $io->confirm('Write all changes at once?');
@@ -103,11 +110,11 @@ final class UserMaker implements MakerInterface
         $io->success('Done!');
     }
 
-    private function generateUser(\ReflectionClass $class, ConsoleStyle $io): void
+    private function generateUser(ConsoleStyle $io): void
     {
-        $lines = file($fileName = $class->getFileName());
-        $traits = array_flip($class->getTraitNames());
-        $implementors = array_flip($class->getInterfaceNames());
+        $lines = file($fileName = $this->user->getFileName());
+        $traits = array_flip($this->user->getTraitNames());
+        $implementors = array_flip($this->user->getInterfaceNames());
         $inClass = $inClassBody = $hasUses = $hasTraitUses = $hasImplements = false;
         $useLine = $traitUseLine = $implementsLine = $constructorLine = 0;
         $nl = null;
@@ -232,7 +239,7 @@ final class UserMaker implements MakerInterface
                 $enableEventHandler();
             }
 
-            if (null !== $constructor = $class->getConstructor()) {
+            if (null !== $constructor = $this->user->getConstructor()) {
                 $offset = $constructor->getStartLine() - 1;
                 $length = $constructor->getEndLine() - $offset;
                 $contents = preg_replace_callback_array([
@@ -284,6 +291,34 @@ PHP
             }
         }
 
+        if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Enable user roles?')) {
+            $baseDir = dirname($this->user->getFileName());
+            $vars = ['ns' => $ns = $this->user->getNamespaceName()];
+
+            $addUses[Entity\Fields\RolesField::class] = true;
+            $addTraitUses['RolesField'] = true;
+
+            $this->writes[] = [$baseDir.'/Role.php', self::getSkeleton('entity/Role.php', $vars)];
+            $this->writes[] = [$baseDir.'/UserRole.php', self::getSkeleton('entity/UserRole.php', $vars)];
+            $this->configs[] = ['class_mapping' => [
+                Entity\Role::class => $ns.'\\Role',
+                Entity\UserRole::class => $userRoleClass = $ns.'\\UserRole',
+            ]];
+
+            $defaultRole = $io->ask('Provide a default role', 'ROLE_USER');
+            $rolesProviderClass = ltrim($io->ask('Provide the roles provider class', 'App\\Security\\UserRolesProvider'), '\\');
+            [$rolesProviderNs, $rolesProviderShortClass] = self::splitClass($rolesProviderClass);
+
+            $this->writes[] = [$this->getClassFileName($rolesProviderClass), self::getSkeleton('service/UserRolesProvider.php', [
+                'ns' => $rolesProviderNs,
+                'class' => $rolesProviderShortClass,
+                'userClass' => $this->user->getName(),
+                'userRoleClass' => $userRoleClass,
+                'defaultRole' => $defaultRole,
+            ])];
+            $this->services[$rolesProviderClass] = UserRolesProviderInterface::class;
+        }
+
 //        if (!isset($traits[Features\CanBeEnabled::class]) && $io->confirm('Can users be enabled / disabled?')) {
 //            $implementors[] = DomainEventHandlerInterface::class;
 //            $addUses[Features\CanBeEnabled::class] = true;
@@ -297,8 +332,6 @@ PHP
 //            $addTraitUses['CanBeConfirmed'] = true;
 //            $enableEventHandler();
 //        }
-
-        // @todo Can users have roles?
 
         if ($numUses = count($addUses)) {
             ksort($addUses);
@@ -338,23 +371,6 @@ PHP
         if ($write) {
             $this->writes[] = [$fileName, implode('', $lines)];
         }
-    }
-
-    private function generateRole(\ReflectionClass $userClass, ConsoleStyle $io): void
-    {
-        if (isset($this->classMapping[Entity\Role::class]) || !$io->confirm('Enable user roles?')) {
-            return;
-        }
-
-        $baseDir = dirname($userClass->getFileName());
-        $vars = ['ns' => $ns = $userClass->getNamespaceName()];
-
-        $this->writes[] = [$baseDir.'/Role.php', self::getSkeleton('entity/Role.php', $vars)];
-        $this->writes[] = [$baseDir.'/UserRole.php', self::getSkeleton('entity/UserRole.php', $vars)];
-        $this->configs[] = ['class_mapping' => [
-            Entity\Role::class => $ns.'\\Role',
-            Entity\UserRole::class => $ns.'\\UserRole',
-        ]];
     }
 
     private function generateControllers(ConsoleStyle $io): void
@@ -457,13 +473,15 @@ PHP
                 'ns' => $nsController,
                 'formNs' => $nsForm,
                 'fieldName' => $usernameField,
-                'userClass' => $this->classMapping[Entity\User::class],
+                'userClass' => $this->user->getName(),
+                'userShortClass' => $this->user->getShortName(),
                 'template' => $templateForgot = $templateDir.'/forgot_password.html.twig',
             ])];
             $this->writes[] = [$this->getClassFileName($nsController.'\\ResetPasswordController'), self::getSkeleton('controller/ResetPasswordController.php', [
                 'ns' => $nsController,
                 'formNs' => $nsForm,
-                'userClass' => $this->classMapping[Entity\User::class],
+                'userClass' => $this->user->getName(),
+                'userShortClass' => $this->user->getShortName(),
                 'template' => $templateReset = $templateDir.'/reset_password.html.twig',
             ])];
             $this->writes[] = [$this->getTemplateFileName($templateForgot), self::getSkeleton('template/forgot_password.html.php', [
@@ -510,6 +528,18 @@ PHP
 
             return require dirname(__DIR__).'/Resources/skeleton/'.$path;
         })();
+    }
+
+    private static function splitClass(string $class): array
+    {
+        $ns = 'App';
+
+        if (false !== $i = strrpos($class, '\\')) {
+            $ns = substr($class, 0, $i);
+            $class = substr($class, $i + 1);
+        }
+
+        return [$ns, $class];
     }
 
     private function getTemplateFileName(string $path): string

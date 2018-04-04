@@ -18,8 +18,6 @@ $uses = [
     'use Twig\\Environment;',
 ];
 
-$userShortName = false === ($i = strrpos($userClass, '\\')) ? $userClass : substr($userClass, $i + 1);
-
 sort($uses);
 $uses = implode("\n", $uses);
 
@@ -46,9 +44,9 @@ final class ResetPasswordController
         CommandBus \$bus,
         EntityManagerInterface \$em
     ): Response {
-        \$user = \$em->getRepository(${userShortName}::class)->findOneBy(['passwordResetToken' => \$token]);
+        \$user = \$em->getRepository(${userShortClass}::class)->findOneBy(['passwordResetToken' => \$token]);
 
-        if (!\$user instanceof ${userShortName}) {
+        if (!\$user instanceof ${userShortClass}) {
             throw new NotFoundHttpException();
         }
 

@@ -6,7 +6,6 @@ namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
-use MsgPhp\User\Infra\Security\UserRolesProviderInterface;
 use MsgPhp\User\{CredentialInterface, Entity, UserIdInterface};
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use SimpleBus\SymfonyBridge\Bus\CommandBus;
@@ -77,12 +76,18 @@ final class UserMaker implements MakerInterface
 
         $this->generateUser($io);
         $this->generateControllers($io);
+        $this->generateConsole($io);
 
         if ($this->configs || $this->services) {
-            $this->writes[] = [$this->projectDir.'/config/packages/msgphp_user.make.php', self::getSkeleton('config.php', [
-                'config' => var_export($this->configs ? array_merge_recursive(...$this->configs) : [], true),
+            $configFile = $this->projectDir.'/config/packages/msgphp_user.make.php';
+            $i = 0;
+            while (file_exists($configFile)) {
+                $configFile = $this->projectDir.'/config/packages/msgphp_user.make_'.++$i.'.php';
+            }
+            array_unshift($this->writes, [$configFile, self::getSkeleton('config.php', [
+                'config' => $this->configs ? var_export(array_merge_recursive(...$this->configs), true) : null,
                 'services' => $this->services,
-            ])];
+            ])]);
             $this->configs = $this->services = [];
         }
 
@@ -108,6 +113,7 @@ final class UserMaker implements MakerInterface
         }
 
         $io->success('Done!');
+        $io->note('Don\'t forget to update your database schema, if needed.');
     }
 
     private function generateUser(ConsoleStyle $io): void
@@ -282,13 +288,13 @@ PHP
                     $traitUseLine += 4;
                 }
             }
+        }
 
-            if (!isset($traits[Entity\Features\ResettablePassword::class]) && $this->hasPassword() && $io->confirm('Can users reset their password?')) {
-                $this->passwordReset = true;
-                $addUses[Entity\Features\ResettablePassword::class] = true;
-                $addTraitUses['ResettablePassword'] = true;
-                $enableEventHandler();
-            }
+        $this->passwordReset = isset($traits[Entity\Features\ResettablePassword::class]);
+        if (!$this->passwordReset && $this->hasPassword() && $io->confirm('Can users reset their password?')) {
+            $addUses[Entity\Features\ResettablePassword::class] = true;
+            $addTraitUses['ResettablePassword'] = true;
+            $enableEventHandler();
         }
 
         if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Enable user roles?')) {
@@ -306,8 +312,7 @@ PHP
             ]];
 
             $defaultRole = $io->ask('Provide a default role', 'ROLE_USER');
-            $rolesProviderClass = ltrim($io->ask('Provide the roles provider class', 'App\\Security\\UserRolesProvider'), '\\');
-            [$rolesProviderNs, $rolesProviderShortClass] = self::splitClass($rolesProviderClass);
+            [$rolesProviderNs, $rolesProviderShortClass] = self::splitClass($rolesProviderClass = 'App\\Security\\UserRolesProvider');
 
             $this->writes[] = [$this->getClassFileName($rolesProviderClass), self::getSkeleton('service/UserRolesProvider.php', [
                 'ns' => $rolesProviderNs,
@@ -316,7 +321,10 @@ PHP
                 'userRoleClass' => $userRoleClass,
                 'defaultRole' => $defaultRole,
             ])];
-            $this->services[$rolesProviderClass] = UserRolesProviderInterface::class;
+            $this->services[] = <<<PHP
+->set(${rolesProviderClass}::class)
+->alias(MsgPhp\\User\\Infra\\Security\\UserRolesProviderInterface::class, ${rolesProviderClass}::class)
+PHP;
         }
 
 //        if (!isset($traits[Features\CanBeEnabled::class]) && $io->confirm('Can users be enabled / disabled?')) {
@@ -495,6 +503,30 @@ PHP
                 'fieldName' => $usernameField,
             ])];
         }
+    }
+
+    private function generateConsole(ConsoleStyle $io): void
+    {
+        if (!$this->hasPassword()) {
+            return;
+        }
+
+        [$contextElementFactoryNs, $contextElementFactoryShortClass] = self::splitClass($contextElementFactoryClass = 'App\\Console\\ClassContextElementFactory');
+
+        $this->writes[] = [$this->getClassFileName($contextElementFactoryClass), self::getSkeleton('service/ClassContextElementFactory.php', [
+            'ns' => $contextElementFactoryNs,
+            'class' => $contextElementFactoryShortClass,
+            'userClass' => $this->user->getName(),
+            'userShortClass' => $this->user->getShortName(),
+            'credentialClass' => $this->credential,
+            'credentialShortClass' => self::splitClass($this->credential)[1],
+        ])];
+        $this->services[] = <<<PHP
+// non-FQCN service for decorating
+->set('app.console.class_context_element_factory', ${contextElementFactoryClass}::class)
+    ->decorate(MsgPhp\\Domain\\Infra\\Console\\Context\\ClassContextElementFactoryInterface::class)
+    ->arg('\$factory', ref('app.console.class_context_element_factory.inner'))
+PHP;
     }
 
     private static function getConstructorSignature(\ReflectionClass $class): string

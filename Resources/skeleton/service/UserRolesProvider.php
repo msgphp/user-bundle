@@ -5,8 +5,8 @@ declare(strict_types=1);
 $uses = [
     'use '.$userClass.';',
     'use '.$userRoleClass.';',
-    'use MsgPhp\User\Entity\User as BaseUser;',
-    'use MsgPhp\User\Infra\Security\UserRolesProviderInterface;',
+    'use MsgPhp\\User\\Entity\\User as BaseUser;',
+    'use MsgPhp\\User\\Infra\\Security\\UserRolesProviderInterface;',
 ];
 
 sort($uses);

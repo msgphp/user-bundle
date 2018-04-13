@@ -2,26 +2,31 @@
 
 declare(strict_types=1);
 
-$serviceConfig = '';
-if ($services) {
-    $services = implode("\n", array_map(function ($class, string $alias): string {
-        $service = '        ->set('.(is_string($class) ? $class : $alias).'::class)';
-        if (is_string($class)) {
-            $service .= "\n        ->alias(${alias}::class, ${class}::class)";
-        }
+$extensionConfig = $servicesConfig = $sep = '';
 
-        return $service;
-    }, array_keys($services), $services));
-    $serviceConfig = <<<PHP
+if ($config) {
+    $extensionConfig = <<<PHP
+    \$container->extension('msgphp_user', ${config});
+PHP;
+}
 
+foreach ($services as $service) {
+    $servicesConfig .= $sep.'        '.str_replace("\n", "\n        ", $service);
+    $sep = "\n\n";
+}
 
+if ($servicesConfig) {
+    if ($extensionConfig) {
+        $extensionConfig .= "\n\n";
+    }
+    $servicesConfig = <<<PHP
     \$container->services()
         ->defaults()
             ->private()
             ->autoconfigure()
             ->autowire()
 
-${services}
+${servicesConfig}
     ;
 PHP;
 }
@@ -29,10 +34,11 @@ PHP;
 return <<<PHP
 <?php
 
-use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\\Component\\DependencyInjection\\Loader\\Configurator\\ContainerConfigurator;
+use function Symfony\\Component\\DependencyInjection\\Loader\\Configurator\\ref;
 
 return function (ContainerConfigurator \$container) {
-    \$container->extension('msgphp_user', ${config});${serviceConfig}
+${extensionConfig}${servicesConfig}
 };
 
 PHP;

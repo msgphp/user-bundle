@@ -2,7 +2,7 @@
     "name": "msgphp/user-bundle",
     "type": "symfony-bundle",
     "license": "MIT",
-    "description": "User domain layer",
+    "description": "Basic user management (the `User` domain)",
     "keywords": ["user", "security"],
     "authors": [
         {

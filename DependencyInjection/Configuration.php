@@ -106,10 +106,26 @@ final class Configuration implements ConfigurationInterface
                                 })
                                 ->thenInvalid('Target %s is not applicable.')
                             ->end()
+                            ->validate()
+                                ->ifTrue(function ($value): bool {
+                                    return !class_exists($value);
+                                })
+                                ->thenInvalid('Target %s does not exists.')
+                            ->end()
                         ->end()
                         ->scalarNode('field')->isRequired()->cannotBeEmpty()->end()
                         ->scalarNode('mapped_by')->defaultValue('user')->cannotBeEmpty()->end()
                     ->end()
+                ->end()
+                ->validate()
+                    ->always(function (array $value): array {
+                        $result = [];
+                        foreach ($value as $lookup) {
+                            $result[$lookup['target']][$lookup['field']] = $lookup['mapped_by'];
+                        }
+
+                        return $result;
+                    })
                 ->end()
             ->end()
         ->end()
@@ -121,29 +137,12 @@ final class Configuration implements ConfigurationInterface
         ->end()
         ->validate()
             ->always(function (array $config): array {
-                $usernameLookup = [];
-                foreach ($config['username_lookup'] as &$value) {
-                    if (isset($config['class_mapping'][$value['target']])) {
-                        $value['target'] = $config['class_mapping'][$value['target']];
-                    }
-
-                    if (isset($usernameLookup[$value['target']]) && in_array($value, $usernameLookup[$value['target']], true)) {
-                        throw new \LogicException(sprintf('Duplicate username lookup mapping for "%s".', $value['target']));
-                    }
-
-                    $usernameLookup[$value['target']][] = $value;
-                }
-                unset($value);
-
                 $userCredential = self::getUserCredential($userClass = $config['class_mapping'][Entity\User::class]);
+                $config['username_field'] = $userCredential['username_field'];
 
-                if ($usernameLookup) {
-                    if (isset($usernameLookup[$userClass])) {
-                        throw new \LogicException(sprintf('Username lookup mapping for "%s" cannot be overwritten.', $userClass));
-                    }
-
-                    if (isset($userCredential['username_field'])) {
-                        $usernameLookup[$userClass][] = ['target' => $userClass, 'field' => $userCredential['username_field']];
+                if ($config['username_lookup']) {
+                    if (isset($config['username_field'])) {
+                        $config['username_lookup'][$userClass][$config['username_field']] = null;
                     }
 
                     $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
@@ -152,9 +151,6 @@ final class Configuration implements ConfigurationInterface
                 if (isset($userCredential['class'])) {
                     $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
                 }
-
-                $config['username_field'] = $userCredential['username_field'];
-                $config['username_lookup'] = $usernameLookup;
 
                 if (null !== $userCredential['username_field'] && !isset($config['commands'][Command\ChangeUserCredentialCommand::class])) {
                     $config['commands'][Command\ChangeUserCredentialCommand::class] = true;

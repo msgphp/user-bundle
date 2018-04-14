@@ -220,17 +220,19 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader->load('doctrine.php');
 
-        if (null !== $config['username_field']) {
+        if (isset($config['username_field'])) {
             $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
                 ->setArgument('$usernameField', $config['username_field']);
         }
 
         if ($config['username_lookup']) {
             $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
-                ->setArgument('$mapping', $config['username_lookup']);
+                ->setArgument('$mapping', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true]);
 
             $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
-                ->setArgument('$targetMapping', $config['username_lookup']);
+                ->setArgument('$targetMapping', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMapping', 'array_keys' => true]);
         } else {
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
         }
@@ -258,12 +260,12 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             unset($files[$baseDir.'/User.Entity.UserEmail.orm.xml']);
         }
 
-        if (!ContainerHelper::hasBundle($container, MsgPhpEavBundle::class)) {
-            unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
+        if (!isset($config['class_mapping'][Entity\Username::class])) {
+            unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
         }
 
-        if (!$config['username_lookup']) {
-            unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
+        if (!ContainerHelper::hasBundle($container, MsgPhpEavBundle::class)) {
+            unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
         }
 
         return array_keys($files);

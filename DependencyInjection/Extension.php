@@ -110,7 +110,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 $container->removeDefinition(ConsoleInfra\Command\DeleteUserRoleCommand::class);
             }
 
-            if (isset($config['class_mapping'][CredentialInterface::class])) {
+            if (isset($config['username_field'])) {
                 $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
                     ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
                         $container,

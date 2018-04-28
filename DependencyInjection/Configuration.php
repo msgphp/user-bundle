@@ -150,6 +150,7 @@ final class Configuration implements ConfigurationInterface
             ->always(function (array $config): array {
                 $userCredential = self::getUserCredential($userClass = $config['class_mapping'][Entity\User::class]);
                 $config['username_field'] = $userCredential['username_field'];
+                $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
 
                 if ($config['username_lookup']) {
                     if (isset($config['username_field'])) {
@@ -159,12 +160,8 @@ final class Configuration implements ConfigurationInterface
                     $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
                 }
 
-                if (isset($userCredential['class'])) {
-                    $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
-                }
-
-                if (null !== $userCredential['username_field'] && !isset($config['commands'][Command\ChangeUserCredentialCommand::class])) {
-                    $config['commands'][Command\ChangeUserCredentialCommand::class] = true;
+                if (isset($config['username_field'])) {
+                    $config['commands'] += [Command\ChangeUserCredentialCommand::class => true];
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);
@@ -181,22 +178,22 @@ final class Configuration implements ConfigurationInterface
         $reflection = new \ReflectionMethod($userClass, 'getCredential');
 
         if (Entity\User::class === $reflection->getDeclaringClass()->getName()) {
-            return ['class' => null, 'username_field' => null];
+            return ['class' => Entity\Credential\Anonymous::class, 'username_field' => null];
         }
 
-        if (null === $credential = $reflection->getReturnType()) {
+        if (null === $type = $reflection->getReturnType()) {
             throw new \LogicException(sprintf('Method "%s::getCredential()" must have a return type set.', $userClass));
         }
 
-        if (Entity\Credential\Anonymous::class === $credential->getName()) {
-            return ['class' => null, 'username_field' => null];
+        if (Entity\Credential\Anonymous::class === $class = $type->getName()) {
+            return ['class' => $class, 'username_field' => null];
         }
 
-        if ($credential->isBuiltin() || !is_subclass_of($class = $credential->getName(), CredentialInterface::class)) {
-            throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $userClass, CredentialInterface::class, $credential->getName()));
+        if ($type->isBuiltin() || !is_subclass_of($class, CredentialInterface::class)) {
+            throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $userClass, CredentialInterface::class, $class));
         }
 
-        if ($credential->allowsNull()) {
+        if ($type->allowsNull()) {
             throw new \LogicException(sprintf('Method "%s::getCredential()" cannot be null-able.', $userClass));
         }
 

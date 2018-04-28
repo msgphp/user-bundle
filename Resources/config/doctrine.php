@@ -3,33 +3,21 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\Events as DoctrineOrmEvents;
-use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\User\Infra\Doctrine;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-/** @var ContainerBuilder $container */
-$container = $container ?? (function (): ContainerBuilder { throw new \LogicException('Invalid context.'); })();
-$reflector = ContainerHelper::getClassReflector($container);
-
-return function (ContainerConfigurator $container) use ($reflector): void {
-    $services = $container->services()
+return function (ContainerConfigurator $container): void {
+    $container->services()
         ->defaults()
             ->autowire()
             ->private()
 
-        ->load($ns = 'MsgPhp\\User\\Infra\\Doctrine\\Repository\\', $repositories = Configuration::getPackageDir().'/Infra/Doctrine/Repository/*Repository.php')
+        ->load('MsgPhp\\User\\Infra\\Doctrine\\Repository\\', Configuration::getPackageDir().'/Infra/Doctrine/Repository/*Repository.php')
 
         ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::loadClassMetadata])
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::postFlush])
     ;
-
-    foreach (glob($repositories) as $file) {
-        foreach ($reflector($repository = $ns.basename($file, '.php'))->getInterfaceNames() as $interface) {
-            $services->alias($interface, $repository);
-        }
-    }
 };

@@ -63,7 +63,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         // persistence infra
         if (class_exists(DoctrineOrmVersion::class) && ContainerHelper::hasBundle($container, DoctrineBundle::class)) {
-            $this->prepareDoctrineOrm($config, $loader, $container);
+            $this->loadDoctrineOrm($config, $loader, $container);
         }
 
         // message infra
@@ -193,7 +193,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $config = $this->processConfiguration($this->getConfiguration($configs = $container->getExtensionConfig($this->getAlias()), $container), $configs);
 
-        ContainerHelper::configureDoctrineTypes($container, $config['class_mapping'], $config['id_type_mapping'], [
+        ContainerHelper::configureDoctrineDbalTypes($container, $config['class_mapping'], $config['id_type_mapping'], [
             UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
         ]);
         ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);
@@ -213,11 +213,11 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $container->getDefinition('data_collector.security')
                 ->setClass(SecurityInfra\DataCollector::class)
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
-                ->setArgument('$factory', new Reference(EntityAwareFactoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
+                ->setArgument('$factory', new Reference(EntityAwareFactoryInterface::class));
         }
     }
 
-    private function prepareDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    private function loadDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
     {
         $loader->load('doctrine.php');
 

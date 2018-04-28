@@ -95,7 +95,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
             ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {
                 return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
-            }, glob(dirname(ContainerHelper::getClassReflection($container, UserIdInterface::class)->getFileName()).'/Event/*Event.php')));
+            }, glob(Configuration::getPackageDir().'/Event/*Event.php')));
         }
 
         // framework infra
@@ -250,7 +250,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
     private static function getDoctrineMappingFiles(array $config, ContainerBuilder $container): array
     {
-        $baseDir = dirname(ContainerHelper::getClassReflection($container, UserIdInterface::class)->getFileName()).'/Infra/Doctrine/Resources/dist-mapping';
+        $baseDir = Configuration::getPackageDir().'/Infra/Doctrine/Resources/dist-mapping';
         $files = array_flip(glob($baseDir.'/*.orm.xml'));
 
         if (!isset($config['class_mapping'][Entity\Role::class])) {

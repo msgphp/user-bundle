@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Doctrine\ORM\Events as DoctrineOrmEvents;
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\User\Infra\Doctrine;
-use MsgPhp\User\UserIdInterface;
+use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -14,13 +14,12 @@ $container = $container ?? (function (): ContainerBuilder { throw new \LogicExce
 $reflector = ContainerHelper::getClassReflector($container);
 
 return function (ContainerConfigurator $container) use ($reflector): void {
-    $baseDir = dirname($reflector(UserIdInterface::class)->getFileName());
     $services = $container->services()
         ->defaults()
             ->autowire()
             ->private()
 
-        ->load($ns = 'MsgPhp\\User\\Infra\\Doctrine\\Repository\\', $repositories = $baseDir.'/Infra/Doctrine/Repository/*Repository.php')
+        ->load($ns = 'MsgPhp\\User\\Infra\\Doctrine\\Repository\\', $repositories = Configuration::getPackageDir().'/Infra/Doctrine/Repository/*Repository.php')
 
         ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')

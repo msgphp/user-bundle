@@ -6,7 +6,8 @@ namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
-use MsgPhp\User\{CredentialInterface, Entity, UserIdInterface};
+use MsgPhp\User\{CredentialInterface, Entity};
+use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use SimpleBus\SymfonyBridge\Bus\CommandBus;
 use Symfony\Bundle\MakerBundle\ConsoleStyle;
@@ -225,7 +226,7 @@ final class UserMaker implements MakerInterface
             $this->credential = $this->classMapping[CredentialInterface::class];
         } elseif ($io->confirm('Generate a user credential?')) {
             $credentials = [];
-            foreach (glob(dirname((new \ReflectionClass(UserIdInterface::class))->getFileName()).'/Entity/Credential/*.php') as $file) {
+            foreach (glob(Configuration::getPackageDir().'/Entity/Credential/*.php') as $file) {
                 if ('Anonymous' === $credential = basename($file, '.php')) {
                     continue;
                 }

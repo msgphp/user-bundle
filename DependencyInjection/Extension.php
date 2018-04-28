@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Doctrine\ORM\EntityManagerInterface as DoctrineEntityManager;
 use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
 use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
@@ -13,8 +13,6 @@ use MsgPhp\EavBundle\MsgPhpEavBundle;
 use MsgPhp\User\{Command, CredentialInterface, Entity, Repository, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra, Validator as ValidatorInfra};
 use MsgPhp\UserBundle\Twig;
-use SimpleBus\SymfonyBridge\SimpleBusCommandBusBundle;
-use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
@@ -27,7 +25,7 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Form\Form;
-use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Validator\Validation;
 use Twig\Environment as TwigEnvironment;
 
@@ -55,59 +53,28 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
 
+        // default infra
         $loader->load('services.php');
 
         ContainerHelper::configureIdentityMapping($container, $config['class_mapping'], Configuration::IDENTITY_MAPPING);
         ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
-        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [DoctrineInfra\EntityFieldsMapping::class]);
+
+        // message infra
+        $loader->load('message.php');
+
+        ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
+        ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {
+            return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
+        }, glob(Configuration::getPackageDir().'/Event/*Event.php')));
 
         // persistence infra
-        if (class_exists(DoctrineOrmVersion::class) && ContainerHelper::hasBundle($container, DoctrineBundle::class)) {
+        if (class_exists(DoctrineOrmVersion::class)) {
             $this->loadDoctrineOrm($config, $loader, $container);
         }
 
-        // message infra
-        if (interface_exists(MessageBusInterface::class) || ContainerHelper::hasBundle($container, SimpleBusCommandBusBundle::class)) {
-            $loader->load('message.php');
-
-            ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
-                Command\Handler\ChangeUserCredentialHandler::class,
-                Command\Handler\ConfirmUserHandler::class,
-                Command\Handler\CreateUserHandler::class,
-                Command\Handler\DeleteUserHandler::class,
-                Command\Handler\DisableUserHandler::class,
-                Command\Handler\EnableUserHandler::class,
-                Command\Handler\RequestUserPasswordHandler::class,
-            ]);
-            ContainerHelper::removeIf($container, !$container->has(Repository\UserAttributeValueRepositoryInterface::class), [
-                Command\Handler\AddUserAttributeValueHandler::class,
-                Command\Handler\ChangeUserAttributeValueHandler::class,
-                Command\Handler\DeleteUserAttributeValueHandler::class,
-            ]);
-            ContainerHelper::removeIf($container, !$container->has(Repository\UserEmailRepositoryInterface::class), [
-                Command\Handler\AddUserEmailHandler::class,
-                Command\Handler\DeleteUserEmailHandler::class,
-            ]);
-            ContainerHelper::removeIf($container, !$container->has(Repository\UserRoleRepositoryInterface::class), [
-                Command\Handler\AddUserRoleHandler::class,
-                Command\Handler\DeleteUserRoleHandler::class,
-            ]);
-            ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
-            ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {
-                return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
-            }, glob(Configuration::getPackageDir().'/Event/*Event.php')));
-        }
-
         // framework infra
-        if (ContainerHelper::hasBundle($container, SecurityBundle::class)) {
+        if (class_exists(Security::class)) {
             $loader->load('security.php');
-
-            ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
-                SecurityInfra\Jwt\SecurityUserProvider::class,
-                SecurityInfra\SecurityUserProvider::class,
-                SecurityInfra\UserParamConverter::class,
-                SecurityInfra\UserValueResolver::class,
-            ]);
         }
 
         if (class_exists(Form::class)) {
@@ -116,11 +83,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (class_exists(Validation::class)) {
             $loader->load('validator.php');
-
-            ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
-                ValidatorInfra\ExistingUsernameValidator::class,
-                ValidatorInfra\UniqueUsernameValidator::class,
-            ]);
         }
 
         if (class_exists(TwigEnvironment::class)) {
@@ -215,6 +177,36 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
                 ->setArgument('$factory', new Reference(EntityAwareFactoryInterface::class));
         }
+
+        ContainerHelper::removeIf($container, !$container->has(DoctrineEntityManager::class), array_keys(self::getDoctrineRepositoryEntityMapping()));
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
+            Command\Handler\ChangeUserCredentialHandler::class,
+            Command\Handler\ConfirmUserHandler::class,
+            Command\Handler\CreateUserHandler::class,
+            Command\Handler\DeleteUserHandler::class,
+            Command\Handler\DisableUserHandler::class,
+            Command\Handler\EnableUserHandler::class,
+            Command\Handler\RequestUserPasswordHandler::class,
+            SecurityInfra\Jwt\SecurityUserProvider::class,
+            SecurityInfra\SecurityUserProvider::class,
+            SecurityInfra\UserParamConverter::class,
+            SecurityInfra\UserValueResolver::class,
+            ValidatorInfra\ExistingUsernameValidator::class,
+            ValidatorInfra\UniqueUsernameValidator::class,
+        ]);
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserAttributeValueRepositoryInterface::class), [
+            Command\Handler\AddUserAttributeValueHandler::class,
+            Command\Handler\ChangeUserAttributeValueHandler::class,
+            Command\Handler\DeleteUserAttributeValueHandler::class,
+        ]);
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserEmailRepositoryInterface::class), [
+            Command\Handler\AddUserEmailHandler::class,
+            Command\Handler\DeleteUserEmailHandler::class,
+        ]);
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserRoleRepositoryInterface::class), [
+            Command\Handler\AddUserRoleHandler::class,
+            Command\Handler\DeleteUserRoleHandler::class,
+        ]);
     }
 
     private function loadDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
@@ -238,14 +230,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
         }
 
-        ContainerHelper::configureDoctrineOrmRepositories($container, $config['class_mapping'], [
-            DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
-            DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
-            DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
-            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
-            DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
-            DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
-        ]);
+        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [DoctrineInfra\EntityFieldsMapping::class]);
+        ContainerHelper::configureDoctrineOrmRepositories($container, $config['class_mapping'], self::getDoctrineRepositoryEntityMapping());
     }
 
     private static function getDoctrineMappingFiles(array $config, ContainerBuilder $container): array
@@ -270,5 +256,17 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         return array_keys($files);
+    }
+
+    private static function getDoctrineRepositoryEntityMapping(): array
+    {
+        return [
+            DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
+            DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
+            DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
+            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
+            DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
+            DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
+        ];
     }
 }

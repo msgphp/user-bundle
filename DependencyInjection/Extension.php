@@ -27,6 +27,7 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Form\Form;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Validator\Validation;
 use Twig\Environment as TwigEnvironment;
 
@@ -66,7 +67,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         // message infra
-        if (ContainerHelper::hasBundle($container, SimpleBusCommandBusBundle::class)) {
+        if (interface_exists(MessageBusInterface::class) || ContainerHelper::hasBundle($container, SimpleBusCommandBusBundle::class)) {
             $loader->load('message.php');
 
             ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [

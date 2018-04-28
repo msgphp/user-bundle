@@ -25,7 +25,7 @@ return function (ContainerConfigurator $container): void {
         ->alias(PasswordHashingInterface::class, Security\PasswordHashing::class)
 
         ->set(Security\SecurityUserProvider::class)
-        ->set(Security\UserValueResolver::class)
+        ->set(Security\UserArgumentValueResolver::class)
             ->tag('controller.argument_value_resolver')
     ;
 

@@ -30,7 +30,7 @@ final class CleanupPass implements CompilerPassInterface
 
         ContainerHelper::removeIf($container, !$container->has(SecurityTokenStorage::class), [
             SecurityInfra\UserParamConverter::class,
-            SecurityInfra\UserValueResolver::class,
+            SecurityInfra\UserArgumentValueResolver::class,
         ]);
         ContainerHelper::removeIf($container, !$container->has(Repository\RoleRepositoryInterface::class), [
             ConsoleInfra\Command\AddUserRoleCommand::class,
@@ -55,7 +55,7 @@ final class CleanupPass implements CompilerPassInterface
             SecurityInfra\Jwt\SecurityUserProvider::class,
             SecurityInfra\SecurityUserProvider::class,
             SecurityInfra\UserParamConverter::class,
-            SecurityInfra\UserValueResolver::class,
+            SecurityInfra\UserArgumentValueResolver::class,
             ValidatorInfra\ExistingUsernameValidator::class,
             ValidatorInfra\UniqueUsernameValidator::class,
         ]);

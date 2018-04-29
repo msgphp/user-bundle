@@ -12,6 +12,6 @@ return function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private()
 
-        ->set(Twig\GlobalVariables::class)
+        ->set(Twig\GlobalVariable::class)
     ;
 };

@@ -146,7 +146,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (ContainerHelper::hasBundle($container, TwigBundle::class)) {
             $container->prependExtensionConfig('twig', [
                 'globals' => [
-                    'msgphp_user' => '@'.Twig\GlobalVariables::class,
+                    Twig\GlobalVariable::NAME => '@'.Twig\GlobalVariable::class,
                 ],
             ]);
         }

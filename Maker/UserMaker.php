@@ -114,7 +114,7 @@ final class UserMaker implements MakerInterface
         }
 
         $io->success('Done!');
-        $io->note('Don\'t forget to update your database schema, if needed.');
+        $io->note('Don\'t forget to update your database schema, if needed');
     }
 
     private function generateUser(ConsoleStyle $io): void
@@ -222,9 +222,9 @@ final class UserMaker implements MakerInterface
             }
         };
 
-        if (isset($this->classMapping[CredentialInterface::class])) {
-            $this->credential = $this->classMapping[CredentialInterface::class];
-        } elseif ($io->confirm('Generate a user credential?')) {
+        $this->credential = $this->classMapping[CredentialInterface::class] ?? null;
+
+        if (!$this->hasUsername() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
             foreach (glob(Configuration::getPackageDir().'/Entity/Credential/*.php') as $file) {
                 if ('Anonymous' === $credential = basename($file, '.php')) {
@@ -404,14 +404,14 @@ PHP;
             }
         }
 
-        $usernameField = $this->credential::getUsernameField();
+        $usernameField = ($hasUsername = $this->hasUsername()) ? $this->credential::getUsernameField() : null;
         $hasPassword = $this->hasPassword();
         $nsForm = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
         $nsController = trim($io->ask('Provide the controller namespace', 'App\\Controller\\User\\'), '\\');
         $templateDir = trim($io->ask('Provide the base template directory', 'user/'), '/');
         $baseTemplate = ltrim($io->ask('Provide the base template file', 'base.html.twig'), '/');
         $baseTemplateBlock = $io->ask('Provide the base template block name', 'body');
-        $hasRegistration = $io->confirm('Add a registration controller?');
+        $hasRegistration = $hasUsername && $io->confirm('Add a registration controller?');
         $hasLogin = $hasPassword && $io->confirm('Add a login and profile controller?');
         $hasForgotPassword = $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
 
@@ -587,6 +587,11 @@ PHP;
         }
 
         return $this->projectDir.'/src/'.str_replace('\\', '/', $class).'.php';
+    }
+
+    private function hasUsername(): bool
+    {
+        return $this->credential && Entity\Credential\Anonymous::class !== $this->credential;
     }
 
     private function hasPassword(): bool

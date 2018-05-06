@@ -1,4 +1,4 @@
-# User bundle
+# User Bundle
 
 A new Symfony bundle for basic user management.
 
@@ -28,7 +28,7 @@ composer require msgphp/user-bundle
 - User roles
 - User attribute values
 
-## Blog posts
+## Blog Posts
 
 - [Adding user management to your Symfony application](https://medium.com/@ro0NL/adding-user-management-to-your-symfony-application-ceeefe2a2e9)
 - [Commanding a decoupled User entity](https://medium.com/@ro0NL/commanding-a-decoupled-user-entity-aee8723c43e5)
@@ -53,7 +53,7 @@ return function (ContainerConfigurator $container) {
 };
 ```
 
-### Feeling lazy?
+### Feeling Lazy?
 
 ```bash
 composer require annot form validator twig security simple-bus/symfony-bridge orm

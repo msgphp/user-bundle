@@ -8,7 +8,7 @@ return <<<TWIG
 {% block ${block} %}
     <h1>Your Profile</h1>
 
-    <p>Logged in as: <em>{{ msgphp_user.user.${fieldName} }}</em></p>
+    <p>Logged in as: <em>{{ msgphp_user.current.${fieldName} }}</em></p>
 {% endblock %}
 
 TWIG;

@@ -296,6 +296,7 @@ PHP
             $addUses[Entity\Features\ResettablePassword::class] = true;
             $addTraitUses['ResettablePassword'] = true;
             $enableEventHandler();
+            $this->passwordReset = true;
         }
 
         if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Enable user roles?')) {

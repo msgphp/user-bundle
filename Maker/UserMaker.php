@@ -7,6 +7,7 @@ namespace MsgPhp\UserBundle\Maker;
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
 use MsgPhp\User\{CredentialInterface, Entity};
+use MsgPhp\User\Password\PasswordAlgorithm;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use SimpleBus\SymfonyBridge\Bus\CommandBus;
@@ -418,6 +419,7 @@ PHP;
 
         if ($hasLogin && $io->confirm('Add config/packages/security.yaml?')) {
             $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', self::getSkeleton('security.php', [
+                'hashAlgorithm' => $this->getPassordHashAlgorithm(),
                 'fieldName' => $usernameField,
             ])];
         }
@@ -598,5 +600,20 @@ PHP;
     private function hasPassword(): bool
     {
         return $this->credential && false !== strpos($this->credential, 'Password');
+    }
+
+    private function getPassordHashAlgorithm(): string
+    {
+        if ($this->credential && false !== strpos($this->credential, 'SaltedPassword')) {
+            return PasswordAlgorithm::DEFAULT_LEGACY;
+        }
+
+        switch (\PASSWORD_DEFAULT) {
+            case defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2:
+                return 'argon2i';
+            case \PASSWORD_BCRYPT:
+            default:
+                return 'bcrypt';
+        }
     }
 }

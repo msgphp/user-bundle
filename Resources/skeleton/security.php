@@ -5,7 +5,7 @@ declare(strict_types=1);
 return <<<YAML
 security:
     encoders:
-        MsgPhp\User\Infra\Security\SecurityUser: bcrypt
+        MsgPhp\User\Infra\Security\SecurityUser: ${hashAlgorithm}
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
         in_memory: { memory: ~ }

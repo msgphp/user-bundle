@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection\Compiler;
 
-use Doctrine\ORM\EntityManagerInterface as DoctrineEntityManager;
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\User\{Command, Repository};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Security as SecurityInfra, Validator as ValidatorInfra};
-use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface as SecurityTokenStorage;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -22,16 +19,6 @@ final class CleanupPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $doctrineRepositoryIds = [];
-        foreach (glob(Configuration::getPackageDir().'/Infra/Doctrine/Repository/*Repository.php') as $file) {
-            $doctrineRepositoryIds[] = 'MsgPhp\\User\\Infra\\Doctrine\\Repository\\'.basename($file, '.php');
-        }
-        ContainerHelper::removeIf($container, !$container->has(DoctrineEntityManager::class), $doctrineRepositoryIds);
-
-        ContainerHelper::removeIf($container, !$container->has(SecurityTokenStorage::class), [
-            SecurityInfra\UserParamConverter::class,
-            SecurityInfra\UserArgumentValueResolver::class,
-        ]);
         ContainerHelper::removeIf($container, !$container->has(Repository\RoleRepositoryInterface::class), [
             ConsoleInfra\Command\AddUserRoleCommand::class,
             ConsoleInfra\Command\DeleteUserRoleCommand::class,

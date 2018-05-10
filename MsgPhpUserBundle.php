@@ -26,7 +26,7 @@ final class MsgPhpUserBundle extends Bundle
     {
         $container->addCompilerPass(new CleanupPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 100);
 
-        BundleHelper::initDomain($container);
+        BundleHelper::build($container);
     }
 
     public function getContainerExtension(): ?ExtensionInterface

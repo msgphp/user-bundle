@@ -4,30 +4,22 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use Doctrine\ORM\Version as DoctrineOrmVersion;
 use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
-use MsgPhp\Domain\Infra\Console as BaseConsoleInfra;
-use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
-use MsgPhp\Domain\Message\MessageReceivingInterface;
-use MsgPhp\EavBundle\MsgPhpEavBundle;
-use MsgPhp\User\{CredentialInterface, Entity, Repository, UserIdInterface};
+use MsgPhp\Domain\Infra\Console\Context\ClassContextFactory as ConsoleClassContextFactory;
+use MsgPhp\Domain\Infra\DependencyInjection\ExtensionHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\FeatureDetection;
+use MsgPhp\User\{CredentialInterface, Entity, Repository};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra};
 use MsgPhp\UserBundle\Twig;
-use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
-use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\Form\Form;
-use Symfony\Component\Security\Core\Security;
-use Symfony\Component\Validator\Validation;
-use Twig\Environment as TwigEnvironment;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -53,84 +45,42 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
 
+        ExtensionHelper::configureDomain($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS, Configuration::IDENTITY_MAPPING);
+
         // default infra
         $loader->load('services.php');
 
-        ContainerHelper::configureIdentityMapping($container, $config['class_mapping'], Configuration::IDENTITY_MAPPING);
-        ContainerHelper::configureEntityFactory($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS);
-
         // message infra
         $loader->load('message.php');
-
-        ContainerHelper::configureCommandMessages($container, $config['class_mapping'], $config['commands']);
-        ContainerHelper::configureEventMessages($container, $config['class_mapping'], array_map(function (string $file): string {
+        ExtensionHelper::prepareCommandHandlers($container, $config['class_mapping'], $config['commands']);
+        ExtensionHelper::prepareEventHandler($container, $config['class_mapping'], array_map(function (string $file): string {
             return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
         }, glob(Configuration::getPackageDir().'/Event/*Event.php')));
 
         // persistence infra
-        if (class_exists(DoctrineOrmVersion::class)) {
+        if (FeatureDetection::isDoctrineOrmAvailable($container)) {
             $this->loadDoctrineOrm($config, $loader, $container);
         }
 
         // framework infra
-        if (class_exists(Security::class)) {
-            $loader->load('security.php');
+        if (FeatureDetection::isConsoleAvailable($container)) {
+            $this->loadConsole($config, $loader, $container);
         }
 
-        if (class_exists(Form::class)) {
+        if (FeatureDetection::isFormAvailable($container)) {
             $loader->load('form.php');
         }
 
-        if (class_exists(Validation::class)) {
+        if (FeatureDetection::isValidatorAvailable($container)) {
             $loader->load('validator.php');
         }
 
-        if (class_exists(TwigEnvironment::class)) {
-            $loader->load('twig.php');
+        if (FeatureDetection::hasSecurityBundle($container)) {
+            $loader->load('security.php');
         }
 
-        if (class_exists(ConsoleEvents::class)) {
-            $loader->load('console.php');
-
-            $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
-                ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
-                    $container,
-                    $config['class_mapping'][Entity\User::class]
-                ));
-
-            if (isset($config['class_mapping'][Entity\UserRole::class])) {
-                $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
-                    ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
-                        $container,
-                        $config['class_mapping'][Entity\UserRole::class],
-                        BaseConsoleInfra\Context\ClassContextFactory::REUSE_DEFINITION
-                    ));
-            } else {
-                $container->removeDefinition(ConsoleInfra\Command\AddUserRoleCommand::class);
-                $container->removeDefinition(ConsoleInfra\Command\DeleteUserRoleCommand::class);
-            }
-
-            if (isset($config['username_field'])) {
-                $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
-                    ->setArgument('$contextFactory', ContainerHelper::registerConsoleClassContextFactory(
-                        $container,
-                        $config['class_mapping'][CredentialInterface::class],
-                        BaseConsoleInfra\Context\ClassContextFactory::ALWAYS_OPTIONAL | BaseConsoleInfra\Context\ClassContextFactory::NO_DEFAULTS
-                    ));
-            } else {
-                $container->removeDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class);
-            }
-
-            foreach (glob(Configuration::getPackageDir().'/Infra/Console/Command/*Command.php') as $file) {
-                if (!$container->hasDefinition($id = 'MsgPhp\\User\\Infra\\Console\\Command\\'.basename($file, '.php'))) {
-                    continue;
-                }
-
-                $definition = $container->getDefinition($id);
-                if (is_subclass_of($definition->getClass() ?? $id, MessageReceivingInterface::class)) {
-                    $definition->addTag('msgphp.domain.message_aware');
-                }
-            }
+        if (FeatureDetection::hasTwigBundle($container)) {
+            $loader->load('twig.php');
         }
     }
 
@@ -138,12 +88,17 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $config = $this->processConfiguration($this->getConfiguration($configs = $container->getExtensionConfig($this->getAlias()), $container), $configs);
 
-        ContainerHelper::configureDoctrineDbalTypes($container, $config['class_mapping'], $config['id_type_mapping'], [
-            UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
-        ]);
-        ContainerHelper::configureDoctrineOrmTargetEntities($container, $config['class_mapping']);
+        if (FeatureDetection::isDoctrineOrmAvailable($container)) {
+            ExtensionHelper::configureDoctrineOrm(
+                $container,
+                $config['class_mapping'],
+                $config['id_type_mapping'],
+                Configuration::DOCTRINE_TYPE_MAPPING,
+                self::getDoctrineMappingFiles($config, $container)
+            );
+        }
 
-        if (ContainerHelper::hasBundle($container, TwigBundle::class)) {
+        if (FeatureDetection::hasTwigBundle($container)) {
             $container->prependExtensionConfig('twig', [
                 'globals' => [
                     Twig\GlobalVariable::NAME => '@'.Twig\GlobalVariable::class,
@@ -154,44 +109,12 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
     public function process(ContainerBuilder $container): void
     {
-        if ($container->hasDefinition('data_collector.security')) {
-            $container->getDefinition('data_collector.security')
+        if (FeatureDetection::hasSecurityBundle($container) && $container->hasDefinition($id = 'data_collector.security')) {
+            $container->getDefinition($id)
                 ->setClass(SecurityInfra\DataCollector::class)
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
                 ->setArgument('$factory', new Reference(EntityAwareFactoryInterface::class));
         }
-    }
-
-    private function loadDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
-    {
-        $loader->load('doctrine.php');
-
-        if (isset($config['username_field'])) {
-            $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
-                ->setArgument('$usernameField', $config['username_field']);
-        }
-
-        if ($config['username_lookup']) {
-            $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
-                ->setArgument('$mapping', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true]);
-
-            $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
-                ->setArgument('$targetMapping', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMapping', 'array_keys' => true]);
-        } else {
-            $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
-        }
-
-        ContainerHelper::configureDoctrineOrmMapping($container, self::getDoctrineMappingFiles($config, $container), [DoctrineInfra\EntityFieldsMapping::class]);
-        ContainerHelper::configureDoctrineOrmRepositories($container, $config['class_mapping'], [
-            DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
-            DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
-            DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
-            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
-            DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
-            DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
-        ]);
     }
 
     private static function getDoctrineMappingFiles(array $config, ContainerBuilder $container): array
@@ -211,10 +134,77 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
         }
 
-        if (!ContainerHelper::hasBundle($container, MsgPhpEavBundle::class)) {
+        if (!FeatureDetection::hasMsgPhpEavBundle($container)) {
             unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
         }
 
         return array_keys($files);
+    }
+
+    private function loadDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $loader->load('doctrine.php');
+
+        ExtensionHelper::prepareDoctrineOrmRepositories($container, $config['class_mapping'], [
+            DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
+            DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
+            DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
+            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
+            DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
+            DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
+        ]);
+
+        if (isset($config['username_field'])) {
+            $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
+                ->setArgument('$usernameField', $config['username_field']);
+        }
+
+        if ($config['username_lookup']) {
+            $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
+                ->setArgument('$mapping', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true]);
+
+            $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
+                ->setArgument('$targetMapping', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMapping', 'array_keys' => true]);
+        } else {
+            $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
+        }
+    }
+
+    private function loadConsole(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $loader->load('console.php');
+
+        ExtensionHelper::prepareConsoleCommands($container);
+
+        $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
+            ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                $container,
+                $config['class_mapping'][Entity\User::class]
+            ));
+
+        if (isset($config['class_mapping'][Entity\UserRole::class])) {
+            $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
+                ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                    $container,
+                    $config['class_mapping'][Entity\UserRole::class],
+                    ConsoleClassContextFactory::REUSE_DEFINITION
+                ));
+        } else {
+            $container->removeDefinition(ConsoleInfra\Command\AddUserRoleCommand::class);
+            $container->removeDefinition(ConsoleInfra\Command\DeleteUserRoleCommand::class);
+        }
+
+        if (isset($config['username_field'])) {
+            $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
+                ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                    $container,
+                    $config['class_mapping'][CredentialInterface::class],
+                    ConsoleClassContextFactory::ALWAYS_OPTIONAL | ConsoleClassContextFactory::NO_DEFAULTS
+                ));
+        } else {
+            $container->removeDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class);
+        }
     }
 }

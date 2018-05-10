@@ -13,5 +13,6 @@ return function (ContainerConfigurator $container): void {
             ->private()
 
         ->load('MsgPhp\\User\\Infra\\Console\\Command\\', Configuration::getPackageDir().'/Infra/Console/Command/*Command.php')
+            ->tag('msgphp.domain.console_command')
     ;
 };

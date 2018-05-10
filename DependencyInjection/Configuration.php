@@ -9,7 +9,7 @@ use MsgPhp\Domain\Entity\Features;
 use MsgPhp\Domain\Infra\Config\{NodeBuilder, TreeBuilder};
 use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
 use MsgPhp\User\{Command, CredentialInterface, Entity, UserId, UserIdInterface};
-use MsgPhp\User\Infra\Uuid as UuidInfra;
+use MsgPhp\User\Infra\{Doctrine as DoctrineInfra, Uuid as UuidInfra};
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
@@ -35,6 +35,9 @@ final class Configuration implements ConfigurationInterface
     ];
     public const UUID_CLASS_MAPPING = [
         UserIdInterface::class => UuidInfra\UserId::class,
+    ];
+    public const DOCTRINE_TYPE_MAPPING = [
+        UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
     ];
     private const COMMAND_MAPPING = [
         Entity\User::class => [
@@ -71,15 +74,11 @@ final class Configuration implements ConfigurationInterface
         ],
     ];
 
+    private static $packageDir;
+
     public static function getPackageDir(): string
     {
-        static $path;
-
-        if (null === $path) {
-            $path = dirname((new \ReflectionClass(UserIdInterface::class))->getFileName());
-        }
-
-        return $path;
+        return self::$packageDir ?? (self::$packageDir = dirname((new \ReflectionClass(UserIdInterface::class))->getFileName()));
     }
 
     public function getConfigTreeBuilder(): TreeBuilder

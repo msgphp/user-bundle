@@ -61,6 +61,8 @@ final class CleanupPass implements CompilerPassInterface
         ContainerHelper::removeIf($container, !$container->has(Repository\UserRoleRepositoryInterface::class), [
             Command\Handler\AddUserRoleHandler::class,
             Command\Handler\DeleteUserRoleHandler::class,
+            ConsoleInfra\Command\AddUserRoleCommand::class,
+            ConsoleInfra\Command\DeleteUserRoleCommand::class,
         ]);
     }
 }

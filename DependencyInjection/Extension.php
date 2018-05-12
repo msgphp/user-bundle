@@ -52,8 +52,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         // message infra
         $loader->load('message.php');
-        ExtensionHelper::prepareCommandHandlers($container, $config['class_mapping'], $config['commands']);
-        ExtensionHelper::prepareEventHandler($container, $config['class_mapping'], array_map(function (string $file): string {
+        ExtensionHelper::finalizeCommandHandlers($container, $config['class_mapping'], $config['commands'], array_map(function (string $file): string {
             return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
         }, glob(Configuration::getPackageDir().'/Event/*Event.php')));
 
@@ -145,44 +144,42 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader->load('doctrine.php');
 
-        ExtensionHelper::prepareDoctrineOrmRepositories($container, $config['class_mapping'], [
-            DoctrineInfra\Repository\RoleRepository::class => Entity\Role::class,
-            DoctrineInfra\Repository\UserRepository::class => Entity\User::class,
-            DoctrineInfra\Repository\UsernameRepository::class => Entity\Username::class,
-            DoctrineInfra\Repository\UserAttributeValueRepository::class => Entity\UserAttributeValue::class,
-            DoctrineInfra\Repository\UserRoleRepository::class => Entity\UserRole::class,
-            DoctrineInfra\Repository\UserEmailRepository::class => Entity\UserEmail::class,
-        ]);
-
         if (isset($config['username_field'])) {
             $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
                 ->setArgument('$usernameField', $config['username_field']);
+        } elseif (!isset($config['class_mapping'][Entity\Username::class])) {
+            $container->removeDefinition(DoctrineInfra\Repository\UserRepository::class);
         }
 
-        if ($config['username_lookup']) {
+        if (isset($config['class_mapping'][Entity\Username::class])) {
             $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
-                ->setArgument('$mapping', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true]);
+                ->setArgument('$targetMappings', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true]);
 
             $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
-                ->setArgument('$targetMapping', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMapping', 'array_keys' => true]);
+                ->setArgument('$targetMappings', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true]);
         } else {
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
+            $container->removeDefinition(DoctrineInfra\Repository\UsernameRepository::class);
         }
+
+        ExtensionHelper::finalizeDoctrineOrmRepositories($container, $config['class_mapping'], Configuration::DOCTRINE_REPOSITORY_MAPPING);
     }
 
     private function loadConsole(array $config, LoaderInterface $loader, ContainerBuilder $container): void
     {
         $loader->load('console.php');
 
-        ExtensionHelper::prepareConsoleCommands($container);
-
         $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
             ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                 $container,
                 $config['class_mapping'][Entity\User::class]
             ));
+
+        if (!isset($config['class_mapping'][Entity\Username::class])) {
+            $container->removeDefinition(ConsoleInfra\Command\SynchronizeUsernamesCommand::class);
+        }
 
         if (isset($config['class_mapping'][Entity\UserRole::class])) {
             $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
@@ -191,9 +188,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     $config['class_mapping'][Entity\UserRole::class],
                     ConsoleClassContextFactory::REUSE_DEFINITION
                 ));
-        } else {
-            $container->removeDefinition(ConsoleInfra\Command\AddUserRoleCommand::class);
-            $container->removeDefinition(ConsoleInfra\Command\DeleteUserRoleCommand::class);
         }
 
         if (isset($config['username_field'])) {
@@ -203,8 +197,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     $config['class_mapping'][CredentialInterface::class],
                     ConsoleClassContextFactory::ALWAYS_OPTIONAL | ConsoleClassContextFactory::NO_DEFAULTS
                 ));
-        } else {
-            $container->removeDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class);
         }
+
+        ExtensionHelper::finalizeConsoleCommands($container, $config['commands'], Configuration::CONSOLE_COMMAND_MAPPING);
     }
 }

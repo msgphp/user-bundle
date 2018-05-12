@@ -144,12 +144,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader->load('doctrine.php');
 
-        if (isset($config['username_field'])) {
-            $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
-                ->setArgument('$usernameField', $config['username_field']);
-        } elseif (!isset($config['class_mapping'][Entity\Username::class])) {
-            $container->removeDefinition(DoctrineInfra\Repository\UserRepository::class);
-        }
+        $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
+            ->setArgument('$usernameField', $config['username_field']);
 
         if (isset($config['class_mapping'][Entity\Username::class])) {
             $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)

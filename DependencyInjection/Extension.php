@@ -173,10 +173,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 $config['class_mapping'][Entity\User::class]
             ));
 
-        if (!isset($config['class_mapping'][Entity\Username::class])) {
-            $container->removeDefinition(ConsoleInfra\Command\SynchronizeUsernamesCommand::class);
-        }
-
         if (isset($config['class_mapping'][Entity\UserRole::class])) {
             $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
@@ -193,6 +189,10 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     $config['class_mapping'][CredentialInterface::class],
                     ConsoleClassContextFactory::ALWAYS_OPTIONAL | ConsoleClassContextFactory::NO_DEFAULTS
                 ));
+        }
+
+        if (!isset($config['class_mapping'][Entity\Username::class])) {
+            $container->removeDefinition(ConsoleInfra\Command\SynchronizeUsernamesCommand::class);
         }
 
         ExtensionHelper::finalizeConsoleCommands($container, $config['commands'], Configuration::CONSOLE_COMMAND_MAPPING);

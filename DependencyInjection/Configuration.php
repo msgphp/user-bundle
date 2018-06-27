@@ -97,7 +97,7 @@ final class Configuration implements ConfigurationInterface
 
     public static function getPackageDir(): string
     {
-        return self::$packageDir ?? (self::$packageDir = dirname((new \ReflectionClass(UserIdInterface::class))->getFileName()));
+        return self::$packageDir ?? (self::$packageDir = dirname((string) (new \ReflectionClass(UserIdInterface::class))->getFileName()));
     }
 
     public function getConfigTreeBuilder(): TreeBuilder
@@ -196,7 +196,9 @@ final class Configuration implements ConfigurationInterface
             return ['class' => Entity\Credential\Anonymous::class, 'username_field' => null];
         }
 
-        if (null === $type = $reflection->getReturnType()) {
+        $type = $reflection->getReturnType();
+
+        if (null === $type) {
             throw new \LogicException(sprintf('Method "%s::getCredential()" must have a return type set.', $userClass));
         }
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Lexik\Bundle\JWTAuthenticationBundle\Security\User\UserProviderWithPayloadSupportsInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Security\User\PayloadAwareUserProviderInterface;
 use MsgPhp\User\Password\PasswordHashingInterface;
 use MsgPhp\User\Infra\Security;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
@@ -34,7 +34,7 @@ return function (ContainerConfigurator $container): void {
             ->tag('request.param_converter', ['converter' => Security\UserParamConverter::NAME]);
     }
 
-    if (interface_exists(UserProviderWithPayloadSupportsInterface::class)) {
+    if (interface_exists(PayloadAwareUserProviderInterface::class)) {
         $services->set(Security\Jwt\SecurityUserProvider::class);
     }
 };

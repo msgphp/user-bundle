@@ -5,12 +5,12 @@ declare(strict_types=1);
 $uses = [
     'use '.$formNs.'\\RegisterType;',
     'use MsgPhp\\User\\Command\\CreateUserCommand;',
-    'use SimpleBus\\SymfonyBridge\\Bus\\CommandBus;',
     'use Symfony\\Component\\Form\\FormFactoryInterface;',
     'use Symfony\\Component\\HttpFoundation\\Request;',
     'use Symfony\\Component\\HttpFoundation\\RedirectResponse;',
     'use Symfony\\Component\\HttpFoundation\\Response;',
     'use Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface;',
+    'use Symfony\\Component\\Messenger\\MessageBusInterface;',
     'use Symfony\\Component\\Routing\\Annotation\\Route;',
     'use Twig\\Environment;',
 ];
@@ -37,13 +37,13 @@ final class RegisterController
         FormFactoryInterface \$formFactory,
         FlashBagInterface \$flashBag,
         Environment \$twig,
-        CommandBus \$bus
+        MessageBusInterface \$bus
     ): Response {
         \$form = \$formFactory->createNamed('', RegisterType::class);
         \$form->handleRequest(\$request);
 
         if (\$form->isSubmitted() && \$form->isValid()) {
-            \$bus->handle(new CreateUserCommand(\$form->getData()));
+            \$bus->dispatch(new CreateUserCommand(\$form->getData()));
             \$flashBag->add('success', 'You\'re successfully registered.');
 
             return new RedirectResponse('${redirect}');

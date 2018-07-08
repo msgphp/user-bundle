@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return <<<YAML
+# see https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml
 security:
     encoders:
         MsgPhp\User\Infra\Security\SecurityUser: ${hashAlgorithm}

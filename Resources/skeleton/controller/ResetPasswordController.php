@@ -7,13 +7,13 @@ $uses = [
     'use '.$formNs.'\\ResetPasswordType;',
     'use MsgPhp\\User\\Command\\ChangeUserCredentialCommand;',
     'use Doctrine\\ORM\\EntityManagerInterface;',
-    'use SimpleBus\\SymfonyBridge\\Bus\\CommandBus;',
     'use Symfony\\Component\\Form\\FormFactoryInterface;',
     'use Symfony\\Component\\HttpFoundation\\Request;',
     'use Symfony\\Component\\HttpFoundation\\RedirectResponse;',
     'use Symfony\\Component\\HttpFoundation\\Response;',
     'use Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface;',
     'use Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException;',
+    'use Symfony\\Component\\Messenger\\MessageBusInterface;',
     'use Symfony\\Component\\Routing\\Annotation\\Route;',
     'use Twig\\Environment;',
 ];
@@ -41,7 +41,7 @@ final class ResetPasswordController
         FormFactoryInterface \$formFactory,
         FlashBagInterface \$flashBag,
         Environment \$twig,
-        CommandBus \$bus,
+        MessageBusInterface \$bus,
         EntityManagerInterface \$em
     ): Response {
         \$user = \$em->getRepository(${userShortClass}::class)->findOneBy(['passwordResetToken' => \$token]);
@@ -54,7 +54,7 @@ final class ResetPasswordController
         \$form->handleRequest(\$request);
 
         if (\$form->isSubmitted() && \$form->isValid()) {
-            \$bus->handle(new ChangeUserCredentialCommand(\$user->getId(), ['password' => \$form->getData()['password']]));
+            \$bus->dispatch(new ChangeUserCredentialCommand(\$user->getId(), ['password' => \$form->getData()['password']]));
             \$flashBag->add('success', 'You\'re password is changed.');
 
             return new RedirectResponse('/login');

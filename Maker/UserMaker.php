@@ -10,7 +10,6 @@ use MsgPhp\User\{CredentialInterface, Entity};
 use MsgPhp\User\Password\PasswordAlgorithm;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
-use SimpleBus\SymfonyBridge\Bus\CommandBus;
 use Symfony\Bundle\MakerBundle\ConsoleStyle;
 use Symfony\Bundle\MakerBundle\DependencyBuilder;
 use Symfony\Bundle\MakerBundle\Generator;
@@ -19,6 +18,7 @@ use Symfony\Bundle\MakerBundle\MakerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Twig\Environment;
@@ -92,6 +92,8 @@ final class UserMaker implements MakerInterface
             ])]);
             $this->configs = $this->services = [];
         }
+
+        $io->success('All questions answered! We\'re almost done.');
 
         $writeAll = count($this->writes) > 1 && $io->confirm('Write all changes at once?');
 
@@ -300,7 +302,7 @@ PHP
             $this->passwordReset = true;
         }
 
-        if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Enable user roles?')) {
+        if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Can users have roles?')) {
             $baseDir = dirname($this->user->getFileName());
             $vars = ['ns' => $ns = $this->user->getNamespaceName()];
 
@@ -314,7 +316,7 @@ PHP
                 Entity\UserRole::class => $userRoleClass = $ns.'\\UserRole',
             ]];
 
-            $defaultRole = $io->ask('Provide a default role', 'ROLE_USER');
+            $defaultRole = $io->ask('Provide a default role name', 'ROLE_USER');
             [$rolesProviderNs, $rolesProviderShortClass] = self::splitClass($rolesProviderClass = 'App\\Security\\UserRolesProvider');
 
             $this->writes[] = [$this->getClassFileName($rolesProviderClass), self::getSkeleton('service/UserRolesProvider.php', [
@@ -395,11 +397,11 @@ PHP;
             !interface_exists(FormInterface::class) ||
             !interface_exists(ValidatorInterface::class) ||
             !class_exists(Environment::class) ||
-            !class_exists(CommandBus::class) ||
+            !interface_exists(MessageBusInterface::class) ||
             !interface_exists(EntityManagerInterface::class) ||
             !class_exists(Security::class)
         ) {
-            $io->note('Not all controller dependencies are met. Run `composer require annotations form validator twig simple-bus/symfony-bridge orm security`');
+            $io->note('Not all controller dependencies are met. Run `composer require annotations form validator twig messenger orm security`');
 
             if (!$io->confirm('Continue anyway?')) {
                 return;
@@ -416,6 +418,13 @@ PHP;
         $hasRegistration = $hasUsername && $io->confirm('Add a registration controller?');
         $hasLogin = $hasPassword && $io->confirm('Add a login and profile controller?');
         $hasForgotPassword = $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
+
+        if ($io->confirm('Add config/packages/messenger.yaml?')) {
+            $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
+            $this->services[] = <<<PHP
+->alias('msgphp.messenger.event_bus', 'event_bus')
+PHP;
+        }
 
         if ($hasLogin && $io->confirm('Add config/packages/security.yaml?')) {
             $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', self::getSkeleton('security.php', [
@@ -511,10 +520,6 @@ PHP;
 
     private function generateConsole(ConsoleStyle $io): void
     {
-        if (!$this->hasPassword()) {
-            return;
-        }
-
         [$contextElementFactoryNs, $contextElementFactoryShortClass] = self::splitClass($contextElementFactoryClass = 'App\\Console\\ClassContextElementFactory');
 
         $this->writes[] = [$this->getClassFileName($contextElementFactoryClass), self::getSkeleton('service/ClassContextElementFactory.php', [
@@ -526,10 +531,8 @@ PHP;
             'credentialShortClass' => self::splitClass($this->credential)[1],
         ])];
         $this->services[] = <<<PHP
-// non-FQCN service for decorating
-->set('app.console.class_context_element_factory', ${contextElementFactoryClass}::class)
-    ->decorate(MsgPhp\\Domain\\Infra\\Console\\Context\\ClassContextElementFactoryInterface::class)
-    ->arg('\$factory', ref('app.console.class_context_element_factory.inner'))
+->set(${contextElementFactoryClass}::class)
+->alias(MsgPhp\\Domain\\Infra\\Console\\Context\\ClassContextElementFactoryInterface::class, ${contextElementFactoryClass}::class)
 PHP;
     }
 

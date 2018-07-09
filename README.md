@@ -17,12 +17,13 @@ composer require msgphp/user-bundle
 ## Features
 
 - Symfony 3.4 / 4.0 ready
-- Doctrine persistence
 - Symfony console commands
+- Symfony messenger commands & events
 - Symfony security infrastructure
 - Symfony validators
+- Doctrine persistence
 - Credential independent (supports e-mail, nickname, etc.)
-- Multiple username / credential support
+- Multiple username support
 - Primary and secondary user e-mails
 - Disabled / enabled users
 - User roles
@@ -56,89 +57,12 @@ return function (ContainerConfigurator $container) {
 ### Feeling Lazy?
 
 ```bash
-composer require annot form validator twig security simple-bus/symfony-bridge orm
-composer require maker server --dev
+composer require annot form validator twig security messenger orm
+composer require maker --dev
 bin/console make:user
 ```
 
 And be done.
-
-## Usage
-
-### With [`DoctrineBundle`](https://github.com/doctrine/DoctrineBundle)
-
-Repositories from `MsgPhp\User\Infra\Doctrine\Repository\*` are registered as a service. Corresponding domain interfaces
-from  `MsgPhp\User\Repository\*` are aliased.
-
-Minimal configuration:
-
-```yaml
-# config/packages/doctrine.yaml
-
-doctrine:
-    orm:
-        mappings:
-            app:
-                dir: '%kernel.project_dir%/src/Entity'
-                type: annotation
-                prefix: App\Entity
-```
-
-- Requires `doctrine/orm`
-
-### With [`SimpleBusCommandBusBundle`](https://github.com/SimpleBus/SymfonyBridge)
-
-Command handlers from `MsgPhp\User\Command\*` are registered as a service.
-
-- Requires `DoctrineBundle + doctrine/orm`
-
-### With [`SecurityBundle`](https://github.com/symfony/security-bundle)
-
-Security infrastructure from `MsgPhp\User\Infra\Security\*` is registered as a service.
-
-In practice the security user is decoupled from your domain entity user. An approach described
-[here](https://stovepipe.systems/post/decoupling-your-security-user).
-
-- `MsgPhp\User\Infra\Security\SecurityUser` implementing `Symfony\Component\Security\Core\User\UserInterface`
-- `App\Entity\User\User` extending `MsgPhp\User\Entity\User`
-
-Minimal configuration:
-
-```yaml
-# config/packages/security.yaml
-
-security:
-    encoders:
-        MsgPhp\User\Infra\Security\SecurityUser: bcrypt
-
-    providers:
-         msgphp_user: { id: MsgPhp\User\Infra\Security\SecurityUserProvider }
-
-    firewalls:
-        main:
-            provider: msgphp_user
-            anonymous: ~
-```
-
-- Requires `DoctrineBundle + doctrine/orm`
-- Suggests `SensioFrameworkExtraBundle` to enable the parameter converter
-
-### With [`symfony/console`](https://github.com/symfony/console)
-
-Console commands from `MsgPhp\User\Infra\Console\Command\*` are registered as a service.
-
-- Requires `DoctrineBundle + doctrine/orm`
-- Requires `SimpleBusCommandBusBundle`
-
-### With [`symfony/form`](https://github.com/symfony/form)
-
-Form types from `MsgPhp\User\Infra\Form\Type\*` are registered as a service.
-
-### With [`symfony/validator`](https://github.com/symfony/validator)
-
-Validators from `MsgPhp\User\Infra\Validator\*` are registered as a service.
-
-- Requires `DoctrineBundle + doctrine/orm`
 
 ## Documentation
 

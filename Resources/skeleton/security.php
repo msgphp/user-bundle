@@ -2,18 +2,6 @@
 
 declare(strict_types=1);
 
-$logoutSection = '';
-
-if ($logout) {
-    $logoutSection = <<<YAML
-
-            logout:
-                path: /logout
-                target: /
-
-YAML;
-}
-
 return <<<YAML
 # see https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml
 security:
@@ -43,7 +31,10 @@ security:
                 default_target_path: /profile
                 username_parameter: ${fieldName}
                 password_parameter: password
-${logoutSection}
+
+            logout:
+                path: logout
+
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:

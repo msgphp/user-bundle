@@ -24,4 +24,8 @@ framework:
                     - msgphp.messenger.console_message_receiver
                     - allow_no_handler
 
+services:
+    msgphp.messenger.command_bus: '@command_bus'
+    msgphp.messenger.event_bus: '@event_bus'
+
 YAML;

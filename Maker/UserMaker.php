@@ -9,6 +9,7 @@ use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
 use MsgPhp\User\{CredentialInterface, Entity};
 use MsgPhp\User\Password\PasswordAlgorithm;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
+use SebastianBergmann\Diff\Differ;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use Symfony\Bundle\MakerBundle\ConsoleStyle;
 use Symfony\Bundle\MakerBundle\DependencyBuilder;
@@ -19,6 +20,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Twig\Environment;
@@ -36,6 +38,7 @@ final class UserMaker implements MakerInterface
     private $passwordReset = false;
     private $configs = [];
     private $services = [];
+    private $routes = [];
     private $writes = [];
 
     /** @var \ReflectionClass */
@@ -58,6 +61,7 @@ final class UserMaker implements MakerInterface
 
     public function configureDependencies(DependencyBuilder $dependencies): void
     {
+        $dependencies->addClassDependency(Differ::class, 'sebastian/diff', true, true);
     }
 
     public function interact(InputInterface $input, ConsoleStyle $io, Command $command): void
@@ -68,10 +72,30 @@ final class UserMaker implements MakerInterface
     {
         $this->credential = $this->user = null;
         $this->passwordReset = false;
-        $this->configs = $this->services = $this->writes = [];
+        $this->configs = $this->services = $this->routes = $this->writes = [];
 
         if (!isset($this->classMapping[Entity\User::class])) {
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
+        }
+
+        if (!interface_exists(EntityManagerInterface::class)) {
+            $io->note(['It\'s recommended to enable Doctrine ORM, run:', 'composer require orm']);
+
+            if (!$io->confirm('Continue anyway?')) {
+                return;
+            }
+        }
+
+        if (!interface_exists(MessageBusInterface::class)) {
+            $io->note(['It\'s recommended to enable Symfony Messenger, run:', 'composer require messenger']);
+
+            if (!$io->confirm('Continue anyway?')) {
+                return;
+            }
+        }
+
+        if ($io->confirm('Enable Symfony Messenger configuration? (config/packages/messenger.yaml)')) {
+            $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
         }
 
         $this->user = new \ReflectionClass($this->classMapping[Entity\User::class]);
@@ -81,43 +105,70 @@ final class UserMaker implements MakerInterface
         $this->generateConsole($io);
 
         if ($this->configs || $this->services) {
-            $configFile = $this->projectDir.'/config/packages/msgphp_user.make.php';
-            $i = 0;
-            while (file_exists($configFile)) {
-                $configFile = $this->projectDir.'/config/packages/msgphp_user.make_'.++$i.'.php';
-            }
-            array_unshift($this->writes, [$configFile, self::getSkeleton('config.php', [
+            array_unshift($this->writes, [$this->projectDir.'/config/packages/msgphp_user.make.php', self::getSkeleton('config.php', [
                 'config' => $this->configs ? var_export(array_merge_recursive(...$this->configs), true) : null,
                 'services' => $this->services,
             ])]);
             $this->configs = $this->services = [];
         }
 
-        $io->success('All questions answered! We\'re almost done.');
+        if ($this->routes) {
+            array_unshift($this->writes, [$this->projectDir.'/config/routes/user.php', self::getSkeleton('routes.php', [
+                'routes' => $this->routes,
+            ])]);
+            $this->routes = [];
+        }
 
-        $writeAll = count($this->writes) > 1 && $io->confirm('Write all changes at once?');
+        if (!$this->writes) {
+            return;
+        }
+
+        $io->success('All questions have been answered!');
+        $io->note(count($this->writes).' file(s) are about to be written');
+
+        $review = $io->confirm('Review changes? All changes will be written otherwise!');
+        $written = [];
+        $writer = function (string $file, string $contents) use ($io, &$written): void {
+            if (!file_put_contents($file, $contents)) {
+                $io->error(sprintf('Cannot write changes to "%s"', $file));
+
+                return;
+            }
+
+            $written[] = $file;
+        };
+        $differ = new Differ();
+        $choices = ['y' => 'Yes', 'r' => 'No, show this review once more', 'n' => 'No, skip this file and continue'];
 
         while ($write = array_shift($this->writes)) {
-            [$fileName, $contents] = $write;
+            [$file, $contents] = $write;
 
-            switch ($writeAll ? 'y' : $io->choice(sprintf('Write changes to %s?', preg_replace('~^'.preg_quote($this->projectDir.'/', '~').'~', './', $fileName)), ['n' => 'No', 's' => 'No, show new code', 'y' => 'Yes'], 'Yes')) {
-                case 'n':
-                    continue 2;
-                case 's':
-                    $io->writeln($contents);
-                    break;
-                case 'y':
-                default:
-                    if (!is_dir($parent = dirname($fileName))) {
-                        mkdir($parent, 0777, true);
-                    }
-                    file_put_contents($fileName, $contents);
-                    break;
+            if (!is_dir($parent = dirname($file))) {
+                mkdir($parent, 0777, true);
+            }
+
+            if (!$review) {
+                $writer($file, $contents);
+                continue;
+            }
+
+            do {
+                $io->text('<info>'.(($exist = file_exists($file)) ? '[changed file]' : '[new file]').'</> '.$file);
+                $io->writeln($differ->diff($exist ? file_get_contents($file) : '', $contents));
+            } while ('r' === $choice = $io->choice('Write changes and continue reviewing?', $choices, $choices['r']));
+
+            if ('y' === $choice) {
+                $writer($file, $contents);
             }
         }
 
         $io->success('Done!');
         $io->note('Don\'t forget to update your database schema, if needed');
+
+        if ($io->confirm('Show written file names?')) {
+            sort($written);
+            $io->listing($written);
+        }
     }
 
     private function generateUser(ConsoleStyle $io): void
@@ -227,7 +278,7 @@ final class UserMaker implements MakerInterface
 
         $this->credential = $this->classMapping[CredentialInterface::class] ?? null;
 
-        if (!$this->hasUsername() && $io->confirm('Generate a user credential?')) {
+        if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
             foreach (glob(Configuration::getPackageDir().'/Entity/Credential/*.php') as $file) {
                 if ('Anonymous' === ($credential = basename($file, '.php')) || false !== strpos($credential, 'SaltedPassword')) {
@@ -394,55 +445,51 @@ PHP;
 
         if (
             !class_exists(AnnotatedRouteControllerLoader::class) ||
+            !class_exists(Route::class) ||
             !interface_exists(FormInterface::class) ||
             !interface_exists(ValidatorInterface::class) ||
             !class_exists(Environment::class) ||
-            !interface_exists(MessageBusInterface::class) ||
-            !interface_exists(EntityManagerInterface::class) ||
-            !class_exists(Security::class)
+            !interface_exists(MessageBusInterface::class)
         ) {
-            $io->note('Not all controller dependencies are met. Run `composer require annotations form validator twig messenger orm security`');
+            $io->warning(['Not all controller dependencies are met, run:', 'composer require annotations router form validator twig messenger']);
 
             if (!$io->confirm('Continue anyway?')) {
                 return;
             }
         }
 
-        $usernameField = ($hasUsername = $this->hasUsername()) ? $this->credential::getUsernameField() : null;
-        $hasPassword = $this->hasPassword();
+        $usernameField = $this->hasCredential() ? $this->credential::getUsernameField() : null;
         $nsForm = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
         $nsController = trim($io->ask('Provide the controller namespace', 'App\\Controller\\User\\'), '\\');
         $templateDir = trim($io->ask('Provide the base template directory', 'user/'), '/');
         $baseTemplate = ltrim($io->ask('Provide the base template file', 'base.html.twig'), '/');
         $baseTemplateBlock = $io->ask('Provide the base template block name', 'body');
-        $hasRegistration = $hasUsername && $io->confirm('Add a registration controller?');
-        $hasLogin = $hasPassword && $io->confirm('Add a login and profile controller?');
+        $hasRegistration = $this->hasCredential() && $io->confirm('Add a registration controller?');
         $hasForgotPassword = $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
+        $hasLogin = $this->hasPassword() && $io->confirm('Add a login and profile controller?'); // keep last
 
-        if ($io->confirm('Add config/packages/messenger.yaml?')) {
-            $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
-            $this->services[] = <<<PHP
-->alias('msgphp.messenger.event_bus', 'event_bus')
+        if ($hasLogin) {
+            if (!class_exists(Security::class)) {
+                $io->warning(['Not all controller dependencies are met, run:', 'composer require security']);
+
+                if (!$io->confirm('Continue anyway?')) {
+                    return;
+                }
+            }
+
+            $this->routes[] = <<<PHP
+->add('logout', '/logout')
 PHP;
-        }
-
-        $hasLogout = $hasLogin && $io->confirm('Can users logout? (adds config/routes.yaml)');
-        if ($hasLogin && $hasLogout) {
-            $this->writes[] = [$this->projectDir.'/config/routes.yaml', self::getSkeleton('routes.php')];
-        }
-
-        if ($hasLogin && $io->confirm('Add config/packages/security.yaml?')) {
             $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', self::getSkeleton('security.php', [
                 'hashAlgorithm' => $this->getPassordHashAlgorithm(),
                 'fieldName' => $usernameField,
-                'logout' => $hasLogout,
             ])];
         }
 
         if ($hasRegistration) {
             $this->writes[] = [$this->getClassFileName($nsForm.'\\RegisterType'), self::getSkeleton('form/RegisterType.php', [
+                'hasPassword' => $this->hasPassword(),
                 'ns' => $nsForm,
-                'hasPassword' => $hasPassword,
                 'fieldName' => $usernameField,
             ])];
             $this->writes[] = [$this->getClassFileName($nsController.'\\RegisterController'), self::getSkeleton('controller/RegisterController.php', [
@@ -453,10 +500,10 @@ PHP;
                 'redirect' => $hasLogin ? '/login' : '/',
             ])];
             $this->writes[] = [$this->getTemplateFileName($template), self::getSkeleton('template/register.html.php', [
+                'hasPassword' => $this->hasPassword(),
                 'base' => $baseTemplate,
                 'block' => $baseTemplateBlock,
                 'fieldName' => $usernameField,
-                'hasPassword' => $hasPassword,
             ])];
         }
 
@@ -476,16 +523,15 @@ PHP;
                 'template' => $templateProfile = $templateDir.'/profile.html.twig',
             ])];
             $this->writes[] = [$this->getTemplateFileName($templateLogin), self::getSkeleton('template/login.html.php', [
+                'hasForgotPassword' => $hasForgotPassword,
                 'base' => $baseTemplate,
                 'block' => $baseTemplateBlock,
                 'fieldName' => $usernameField,
-                'hasForgotPassword' => $hasForgotPassword,
             ])];
             $this->writes[] = [$this->getTemplateFileName($templateProfile), self::getSkeleton('template/profile.html.php', [
                 'base' => $baseTemplate,
                 'block' => $baseTemplateBlock,
                 'fieldName' => $usernameField,
-                'logout' => $hasLogout,
             ])];
         }
 
@@ -602,19 +648,19 @@ PHP;
         return $this->projectDir.'/src/'.str_replace('\\', '/', $class).'.php';
     }
 
-    private function hasUsername(): bool
+    private function hasCredential(): bool
     {
         return $this->credential && Entity\Credential\Anonymous::class !== $this->credential;
     }
 
     private function hasPassword(): bool
     {
-        return $this->credential && false !== strpos($this->credential, 'Password');
+        return $this->hasCredential() && false !== strpos($this->credential, 'Password');
     }
 
     private function getPassordHashAlgorithm(): string
     {
-        if ($this->credential && false !== strpos($this->credential, 'SaltedPassword')) {
+        if ($this->hasCredential() && false !== strpos($this->credential, 'SaltedPassword')) {
             return PasswordAlgorithm::DEFAULT_LEGACY;
         }
 

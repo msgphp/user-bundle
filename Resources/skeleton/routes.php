@@ -2,11 +2,22 @@
 
 declare(strict_types=1);
 
-return <<<YAML
-#index:
-#    path: /
-#    controller: App\Controller\DefaultController::index
-logout:
-    path: /logout
+$routesConfig = $sep = '';
 
-YAML;
+foreach ($routes as $route) {
+    $routesConfig .= $sep.'        '.str_replace("\n", "\n        ", $route);
+    $sep = "\n";
+}
+
+return <<<PHP
+<?php
+
+use Symfony\\Component\\Routing\\Loader\\Configurator\\RoutingConfigurator;
+
+return function (RoutingConfigurator \$routes) {
+    \$routes
+{$routesConfig}
+    ;
+};
+
+PHP;

@@ -173,6 +173,14 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 $config['class_mapping'][Entity\User::class]
             ));
 
+        if (isset($config['class_mapping'][Entity\Role::class])) {
+            $container->getDefinition(ConsoleInfra\Command\CreateRoleCommand::class)
+                ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                    $container,
+                    $config['class_mapping'][Entity\Role::class]
+                ));
+        }
+
         if (isset($config['class_mapping'][Entity\UserRole::class])) {
             $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(

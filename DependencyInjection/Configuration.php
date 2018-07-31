@@ -52,13 +52,19 @@ final class Configuration implements ConfigurationInterface
         Command\AddUserRoleCommand::class => [ConsoleInfra\Command\AddUserRoleCommand::class],
         Command\ChangeUserCredentialCommand::class => [ConsoleInfra\Command\ChangeUserCredentialCommand::class],
         Command\ConfirmUserCommand::class => [ConsoleInfra\Command\ConfirmUserCommand::class],
+        Command\CreateRoleCommand::class => [ConsoleInfra\Command\CreateRoleCommand::class],
         Command\CreateUserCommand::class => [ConsoleInfra\Command\CreateUserCommand::class],
+        Command\DeleteRoleCommand::class => [ConsoleInfra\Command\DeleteRoleCommand::class],
         Command\DeleteUserCommand::class => [ConsoleInfra\Command\DeleteUserCommand::class],
         Command\DeleteUserRoleCommand::class => [ConsoleInfra\Command\DeleteUserRoleCommand::class],
         Command\DisableUserCommand::class => [ConsoleInfra\Command\DisableUserCommand::class],
         Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
     ];
     private const COMMAND_MAPPING = [
+        Entity\Role::class => [
+            Command\CreateRoleCommand::class,
+            Command\DeleteRoleCommand::class,
+        ],
         Entity\User::class => [
             Command\CreateUserCommand::class,
             Command\DeleteUserCommand::class,

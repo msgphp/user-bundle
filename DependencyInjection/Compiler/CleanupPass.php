@@ -20,7 +20,11 @@ final class CleanupPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         ContainerHelper::removeIf($container, !$container->has(Repository\RoleRepositoryInterface::class), [
+            Command\Handler\CreateRoleHandler::class,
+            Command\Handler\DeleteRoleHandler::class,
             ConsoleInfra\Command\AddUserRoleCommand::class,
+            ConsoleInfra\Command\CreateRoleCommand::class,
+            ConsoleInfra\Command\DeleteRoleCommand::class,
             ConsoleInfra\Command\DeleteUserRoleCommand::class,
         ]);
         ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [

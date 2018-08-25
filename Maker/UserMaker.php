@@ -124,7 +124,7 @@ final class UserMaker implements MakerInterface
         }
 
         $io->success('All questions have been answered!');
-        $io->note(count($this->writes).' file(s) are about to be written');
+        $io->note(\count($this->writes).' file(s) are about to be written');
 
         $review = $io->confirm('Review changes? All changes will be written otherwise!');
         $written = [];
@@ -143,7 +143,7 @@ final class UserMaker implements MakerInterface
         while ($write = array_shift($this->writes)) {
             [$file, $contents] = $write;
 
-            if (!is_dir($parent = dirname($file))) {
+            if (!is_dir($parent = \dirname($file))) {
                 mkdir($parent, 0777, true);
             }
 
@@ -182,7 +182,7 @@ final class UserMaker implements MakerInterface
         $indent = '';
 
         foreach ($tokens = token_get_all(implode('', $lines)) as $i => $token) {
-            if (!is_array($token)) {
+            if (!\is_array($token)) {
                 if ('{' === $token && $inClass && !$inClassBody) {
                     $inClassBody = true;
                 }
@@ -199,10 +199,10 @@ final class UserMaker implements MakerInterface
                 }
             }
 
-            if (in_array($token[0], [\T_COMMENT, \T_DOC_COMMENT, \T_WHITESPACE], true)) {
+            if (\in_array($token[0], [\T_COMMENT, \T_DOC_COMMENT, \T_WHITESPACE], true)) {
                 if (\T_WHITESPACE === $token[0]) {
                     if (!$nl) {
-                        $nl = in_array($nl = trim($token[1], ' '), ["\n", "\r", "\r\n"], true) ? $nl : null;
+                        $nl = \in_array($nl = trim($token[1], ' '), ["\n", "\r", "\r\n"], true) ? $nl : null;
                     }
                     if (!$indent && $inClassBody && $nl) {
                         $spaces = explode($nl, $token[1]);
@@ -240,7 +240,7 @@ final class UserMaker implements MakerInterface
                 $implementsLine = $token[2];
                 $j = $i + 1;
                 while (isset($tokens[$j])) {
-                    if (is_array($tokens[$j]) && \T_STRING === $tokens[$j][0]) {
+                    if (\is_array($tokens[$j]) && \T_STRING === $tokens[$j][0]) {
                         $implementsLine = $tokens[$j][2];
                     } elseif ('{' === $tokens[$j]) {
                         break;
@@ -251,7 +251,7 @@ final class UserMaker implements MakerInterface
                 $constructorLine = $token[2];
                 $j = $i - 1;
                 while (isset($tokens[$j])) {
-                    if (is_array($tokens[$j])) {
+                    if (\is_array($tokens[$j])) {
                         $constructorLine = $tokens[$j][2];
                     } elseif (';' === $tokens[$j] || '}' === $tokens[$j]) {
                         break;
@@ -317,7 +317,7 @@ final class UserMaker implements MakerInterface
 
                         return $nl.$indent.$credentialInit.$match[0];
                     },
-                ], $oldContents = implode('', array_slice($lines, $offset, $length)));
+                ], $oldContents = implode('', \array_slice($lines, $offset, $length)));
 
                 if ($contents !== $oldContents) {
                     array_splice($lines, $offset, $length, $contents);
@@ -354,7 +354,7 @@ PHP
         }
 
         if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Can users have roles?')) {
-            $baseDir = dirname($this->user->getFileName());
+            $baseDir = \dirname($this->user->getFileName());
             $vars = ['ns' => $ns = $this->user->getNamespaceName()];
 
             $addUses[Entity\Fields\RolesField::class] = true;
@@ -397,7 +397,7 @@ PHP;
 //            $enableEventHandler();
 //        }
 
-        if ($numUses = count($addUses)) {
+        if ($numUses = \count($addUses)) {
             ksort($addUses);
             $uses = array_map(function (string $use) use ($nl): string {
                 return 'use '.$use.';'.$nl;
@@ -413,7 +413,7 @@ PHP;
             $traitUseLine += $numUses;
         }
 
-        if ($numTraitUses = count($addTraitUses)) {
+        if ($numTraitUses = \count($addTraitUses)) {
             ksort($addTraitUses);
             $traitUses = array_map(function (string $use) use ($nl, $indent): string {
                 return $indent.'use '.$use.';'.$nl;
@@ -425,7 +425,7 @@ PHP;
             $write = true;
         }
 
-        if ($numImplementors = count($addImplementors)) {
+        if ($numImplementors = \count($addImplementors)) {
             ksort($addImplementors);
             $implements = ($hasImplements ? ', ' : ' implements ').implode(', ', array_keys($addImplementors));
             $lines[$implementsLine - 1] = preg_replace('~(\s*+{?\s*+)$~', $implements.'\\1', $lines[$implementsLine - 1], 1);
@@ -597,7 +597,7 @@ PHP;
 
         $lines = file($class->getFileName());
         $offset = $constructor->getStartLine() - 1;
-        $body = implode('', array_slice($lines, $offset, $constructor->getEndLine() - $offset));
+        $body = implode('', \array_slice($lines, $offset, $constructor->getEndLine() - $offset));
 
         if (preg_match('~^[^_]*+__construct\(([^\)]++)\)~i', $body, $matches)) {
             return $matches[1];
@@ -618,7 +618,7 @@ PHP;
         return (function () use ($path, $vars) {
             extract($vars);
 
-            return require dirname(__DIR__).'/Resources/skeleton/'.$path;
+            return require \dirname(__DIR__).'/Resources/skeleton/'.$path;
         })();
     }
 
@@ -665,7 +665,7 @@ PHP;
         }
 
         switch (\PASSWORD_DEFAULT) {
-            case defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2:
+            case \defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2:
                 return 'argon2i';
             case \PASSWORD_BCRYPT:
             default:

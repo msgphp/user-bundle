@@ -42,7 +42,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $loader = new PhpFileLoader($container, new FileLocator(dirname(__DIR__).'/Resources/config'));
+        $loader = new PhpFileLoader($container, new FileLocator(\dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
 
         ExtensionHelper::configureDomain($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS, Configuration::IDENTITY_MAPPING);

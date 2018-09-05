@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\Twig;
 
-use MsgPhp\Domain\Factory\EntityAwareFactoryInterface;
 use MsgPhp\User\Entity\User;
 use MsgPhp\User\Infra\Security\SecurityUser;
 use MsgPhp\User\Repository\UserRepositoryInterface;
@@ -31,10 +30,10 @@ final class GlobalVariable implements ServiceSubscriberInterface
 
     public function getCurrent(): User
     {
-        return $this->getUserRepository()->find($this->getId());
+        return $this->getUserRepository()->find($this->getCurrentId());
     }
 
-    public function getId(): UserIdInterface
+    public function getCurrentId(): UserIdInterface
     {
         $token = $this->getTokenStorage()->getToken();
 
@@ -48,10 +47,7 @@ final class GlobalVariable implements ServiceSubscriberInterface
             throw new \LogicException('User not authenticated.');
         }
 
-        /** @var UserIdInterface $id */
-        $id = $this->getObjectFactory()->identify(User::class, $user->getUsername());
-
-        return $id;
+        return $user->getUserId();
     }
 
     public function isUserType(User $user, string $class): bool
@@ -62,15 +58,9 @@ final class GlobalVariable implements ServiceSubscriberInterface
     public static function getSubscribedServices(): array
     {
         return [
-            EntityAwareFactoryInterface::class,
             '?'.TokenStorageInterface::class,
             '?'.UserRepositoryInterface::class,
         ];
-    }
-
-    private function getObjectFactory(): EntityAwareFactoryInterface
-    {
-        return $this->container->get(EntityAwareFactoryInterface::class);
     }
 
     private function getTokenStorage(): TokenStorageInterface

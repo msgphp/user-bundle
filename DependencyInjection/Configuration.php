@@ -149,13 +149,17 @@ final class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                         ->scalarNode('field')->isRequired()->cannotBeEmpty()->end()
-                        ->scalarNode('mapped_by')->defaultValue('user')->cannotBeEmpty()->end()
+                        ->scalarNode('mapped_by')->defaultNull()->end()
                     ->end()
                 ->end()
                 ->validate()
                     ->always(function (array $value): array {
                         $result = [];
                         foreach ($value as $lookup) {
+                            if (null === $lookup['mapped_by'] && !is_subclass_of($lookup['target'], Entity\User::class)) {
+                                throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $lookup['target'], Entity\User::class));
+                            }
+
                             $result[$lookup['target']][$lookup['field']] = $lookup['mapped_by'];
                         }
 

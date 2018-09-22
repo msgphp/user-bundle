@@ -18,7 +18,7 @@
         "exclude-from-classmap": ["/Tests/"]
     },
     "require": {
-        "msgphp/user": "^0.6",
+        "msgphp/user": "^0.7",
         "symfony/config": "^3.4|^4.0",
         "symfony/dependency-injection": "^3.4|^4.0",
         "symfony/http-kernel": "^3.4|^4.0"
@@ -27,7 +27,7 @@
         "doctrine/doctrine-bundle": "^1.8",
         "doctrine/orm": "^2.6",
         "lexik/jwt-authentication-bundle": "^2.5",
-        "msgphp/eav-bundle": "^0.6",
+        "msgphp/eav-bundle": "^0.7",
         "simple-bus/symfony-bridge": "^5.1",
         "symfony/console": "^3.4|^4.0",
         "symfony/form": "^3.4|^4.0",

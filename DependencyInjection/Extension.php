@@ -143,19 +143,19 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader->load('doctrine.php');
 
         $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
-            ->setArgument('$usernameField', $config['username_field']);
+            ->setArgument('$usernameField', $config['username_field'])
+            ->setArgument('$usernameClass', $config['username_lookup'] ? $config['class_mapping'][Entity\Username::class] : null);
 
-        if (isset($config['class_mapping'][Entity\Username::class])) {
+        $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
+            ->setArgument('$targetMappings', $config['username_lookup'])
+            ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true]);
+
+        if ($config['doctrine']['auto_sync_username']) {
             $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
-                ->setArgument('$targetMappings', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true]);
-
-            $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
                 ->setArgument('$targetMappings', $config['username_lookup'])
                 ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true]);
         } else {
             $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
-            $container->removeDefinition(DoctrineInfra\Repository\UsernameRepository::class);
         }
 
         ExtensionHelper::finalizeDoctrineOrmRepositories($container, $config['class_mapping'], Configuration::DOCTRINE_REPOSITORY_MAPPING);
@@ -195,10 +195,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     $config['class_mapping'][CredentialInterface::class],
                     ConsoleClassContextFactory::ALWAYS_OPTIONAL | ConsoleClassContextFactory::NO_DEFAULTS
                 ));
-        }
-
-        if (!isset($config['class_mapping'][Entity\Username::class])) {
-            $container->removeDefinition(ConsoleInfra\Command\SynchronizeUsernamesCommand::class);
         }
 
         ExtensionHelper::finalizeConsoleCommands($container, $config['commands'], Configuration::CONSOLE_COMMAND_MAPPING);

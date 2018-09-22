@@ -114,7 +114,7 @@ final class Configuration implements ConfigurationInterface
         $children
             ->classMappingNode('class_mapping')
                 ->requireClasses([Entity\User::class])
-                ->disallowClasses([CredentialInterface::class, Entity\Username::class])
+                ->disallowClasses([CredentialInterface::class])
                 ->groupClasses([Entity\Role::class, Entity\UserRole::class])
                 ->subClassValues()
             ->end()
@@ -137,15 +137,9 @@ final class Configuration implements ConfigurationInterface
                             ->cannotBeEmpty()
                             ->validate()
                                 ->ifTrue(function ($value): bool {
-                                    return Entity\Username::class === $value;
-                                })
-                                ->thenInvalid('Target %s is not applicable.')
-                            ->end()
-                            ->validate()
-                                ->ifTrue(function ($value): bool {
                                     return !class_exists($value);
                                 })
-                                ->thenInvalid('Target %s does not exists.')
+                                ->thenInvalid('Target class %s does not exists.')
                             ->end()
                         ->end()
                         ->scalarNode('field')->isRequired()->cannotBeEmpty()->end()
@@ -156,15 +150,25 @@ final class Configuration implements ConfigurationInterface
                     ->always(function (array $value): array {
                         $result = [];
                         foreach ($value as $lookup) {
-                            if (null === $lookup['mapped_by'] && !is_subclass_of($lookup['target'], Entity\User::class)) {
-                                throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $lookup['target'], Entity\User::class));
+                            ['target' => $target, 'field' => $field, 'mapped_by' => $mappedBy] = $lookup;
+                            if (Entity\Username::class === $target || is_subclass_of($target, Entity\Username::class)) {
+                                throw new \LogicException(sprintf('Lookup target "%s" is not applicable.', (string) $target));
+                            }
+                            if (null === $mappedBy && !is_subclass_of($target, Entity\User::class)) {
+                                throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $target, Entity\User::class));
                             }
 
-                            $result[$lookup['target']][$lookup['field']] = $lookup['mapped_by'];
+                            $result[$target][$field] = $mappedBy;
                         }
 
                         return $result;
                     })
+                ->end()
+            ->end()
+            ->arrayNode('doctrine')
+                ->addDefaultsIfNotSet()
+                ->children()
+                    ->booleanNode('auto_sync_username')->defaultTrue()->end()
                 ->end()
             ->end()
         ->end()
@@ -182,11 +186,12 @@ final class Configuration implements ConfigurationInterface
                 $config['commands'][Command\ChangeUserCredentialCommand::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandlerInterface::class) : false;
 
                 if ($config['username_lookup']) {
+                    if (!isset($config['class_mapping'][Entity\Username::class])) {
+                        throw new \LogicException(sprintf('Configuring "username_lookup" requires the "%s" entity to be mapped under "class_mapping".', Entity\Username::class));
+                    }
                     if (isset($config['username_field'])) {
                         $config['username_lookup'][$userClass][$config['username_field']] = null;
                     }
-
-                    $config['class_mapping'][Entity\Username::class] = Entity\Username::class;
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);

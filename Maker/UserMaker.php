@@ -52,7 +52,7 @@ final class UserMaker implements MakerInterface
 
     public static function getCommandName(): string
     {
-        return 'make:user';
+        return 'make:user:msgphp';
     }
 
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
@@ -61,7 +61,6 @@ final class UserMaker implements MakerInterface
 
     public function configureDependencies(DependencyBuilder $dependencies): void
     {
-        $dependencies->addClassDependency(Differ::class, 'sebastian/diff', true, true);
     }
 
     public function interact(InputInterface $input, ConsoleStyle $io, Command $command): void
@@ -137,7 +136,7 @@ final class UserMaker implements MakerInterface
 
             $written[] = $file;
         };
-        $differ = new Differ();
+        $differ = class_exists(Differ::class) ? new Differ() : null;
         $choices = ['y' => 'Yes', 'r' => 'No, show this review once more', 'n' => 'No, skip this file and continue'];
 
         while ($write = array_shift($this->writes)) {
@@ -154,7 +153,15 @@ final class UserMaker implements MakerInterface
 
             do {
                 $io->text('<info>'.(($exist = file_exists($file)) ? '[changed file]' : '[new file]').'</> '.$file);
-                $io->writeln($differ->diff($exist ? file_get_contents($file) : '', $contents));
+                if (null === $differ) {
+                    if ($exist) {
+                        $io->writeln(['--- Original', file_get_contents($file), '+++ New', $contents]);
+                    } else {
+                        $io->writeln($contents);
+                    }
+                } else {
+                    $io->writeln($differ->diff($exist ? file_get_contents($file) : '', $contents));
+                }
             } while ('r' === $choice = $io->choice('Write changes and continue reviewing?', $choices, $choices['r']));
 
             if ('y' === $choice) {

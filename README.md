@@ -59,7 +59,7 @@ return function (ContainerConfigurator $container) {
 ```bash
 composer require annot form validator twig security messenger orm
 composer require maker --dev
-bin/console make:user
+bin/console make:user:msgphp
 ```
 
 And be done.

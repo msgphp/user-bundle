@@ -3,7 +3,7 @@
     "type": "symfony-bundle",
     "license": "MIT",
     "description": "Basic user management (the `User` domain)",
-    "keywords": ["user", "security"],
+    "keywords": ["rich domain model", "symfony", "user", "security"],
     "authors": [
         {
             "name": "Roland Franssen",

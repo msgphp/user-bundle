@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\Infra\Console\Context\ClassContextFactory as ConsoleClassContextFactory;
-use MsgPhp\Domain\Infra\DependencyInjection\ExtensionHelper;
-use MsgPhp\Domain\Infra\DependencyInjection\FeatureDetection;
-use MsgPhp\User\{CredentialInterface, Entity, Repository};
+use MsgPhp\Domain\Infra\DependencyInjection\{ContainerHelper, ExtensionHelper, FeatureDetection};
+use MsgPhp\User\{CredentialInterface, Entity, Repository, Role};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Security as SecurityInfra};
 use MsgPhp\UserBundle\Twig;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
@@ -80,6 +80,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (FeatureDetection::hasTwigBundle($container)) {
             $loader->load('twig.php');
         }
+
+        $this->configureRoleProvider($config, $container);
     }
 
     public function prepend(ContainerBuilder $container): void
@@ -198,5 +200,31 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         ExtensionHelper::finalizeConsoleCommands($container, $config['commands'], Configuration::CONSOLE_COMMAND_MAPPING);
+    }
+
+    private function configureRoleProvider(array $config, ContainerBuilder $container): void
+    {
+        if (isset($config['class_mapping'][Entity\UserRole::class])) {
+            $userProvider = $container->autowire(Role\UserRoleProvider::class);
+            $userProvider->setPublic(false);
+        }
+
+        $providers = [];
+        foreach ($config['role_providers'] as $factory => $provider) {
+            if ('default' === $factory) {
+                if (!$provider) {
+                    continue;
+                }
+
+                $defaultProvider = ContainerHelper::registerAnonymous($container, Role\DefaultRoleProvider::class, false, $defaultProviderId);
+                $defaultProvider->setArgument('$roles', $provider);
+                $provider = $defaultProviderId;
+            }
+
+            $providers[] = new Reference($provider);
+        }
+
+        $container->getDefinition(Role\ChainRoleProvider::class)
+            ->setArgument('$providers', new IteratorArgument($providers));
     }
 }

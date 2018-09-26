@@ -6,7 +6,7 @@ namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
-use MsgPhp\User\{CredentialInterface, Entity};
+use MsgPhp\User\{CredentialInterface, Entity, Role};
 use MsgPhp\User\Password\PasswordAlgorithm;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use SebastianBergmann\Diff\Differ;
@@ -360,7 +360,8 @@ PHP
             $this->passwordReset = true;
         }
 
-        if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Can users have roles?')) {
+        $roleProviders = [];
+        if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Can users have assigned roles?')) {
             $baseDir = \dirname($this->user->getFileName());
             $vars = ['ns' => $ns = $this->user->getNamespaceName()];
 
@@ -373,22 +374,18 @@ PHP
                 Entity\Role::class => $ns.'\\Role',
                 Entity\UserRole::class => $userRoleClass = $ns.'\\UserRole',
             ]];
-
-            $defaultRole = $io->ask('Provide a default role name', 'ROLE_USER');
-            [$rolesProviderNs, $rolesProviderShortClass] = self::splitClass($rolesProviderClass = 'App\\Security\\UserRolesProvider');
-
-            $this->writes[] = [$this->getClassFileName($rolesProviderClass), self::getSkeleton('service/UserRolesProvider.php', [
-                'ns' => $rolesProviderNs,
-                'class' => $rolesProviderShortClass,
-                'userClass' => $this->user->getName(),
-                'userRoleClass' => $userRoleClass,
-                'defaultRole' => $defaultRole,
-            ])];
-            $this->services[] = <<<PHP
-->set(${rolesProviderClass}::class)
-->alias(MsgPhp\\User\\Infra\\Security\\UserRolesProviderInterface::class, ${rolesProviderClass}::class)
-PHP;
+            $roleProviders[] = Role\UserRoleProvider::class;
         }
+
+        $defaultRoles = [];
+        do {
+            do {
+                $defaultRole = $io->ask('Provide a default user role (e.g. <comment>ROLE_USER</>)');
+            } while (null === $defaultRole);
+            $defaultRoles[] = $defaultRole;
+        } while ($io->confirm('Add another default user role?', false));
+
+        $this->configs[] = ['role_providers' => ['default' => $defaultRoles] + $roleProviders];
 
 //        if (!isset($traits[Features\CanBeEnabled::class]) && $io->confirm('Can users be enabled / disabled?')) {
 //            $implementors[] = DomainEventHandlerInterface::class;

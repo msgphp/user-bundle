@@ -98,6 +98,7 @@ final class Configuration implements ConfigurationInterface
             Command\DeleteUserRoleCommand::class,
         ],
     ];
+    private const DEFAULT_ROLE = 'ROLE_USER';
 
     private static $packageDir;
 
@@ -164,6 +165,37 @@ final class Configuration implements ConfigurationInterface
                         return $result;
                     })
                 ->end()
+            ->end()
+            ->arrayNode('role_providers')
+                ->defaultValue(['default' => [self::DEFAULT_ROLE]])
+                ->requiresAtLeastOneElement()
+                ->beforeNormalization()
+                    ->always(function ($value) {
+                        if (\is_array($value)) {
+                            if (!isset($value['default'])) {
+                                $value['default'] = [self::DEFAULT_ROLE];
+                            } elseif (false === $value['default']) {
+                                $value['default'] = [];
+                            } elseif (!\is_array($value['default'])) {
+                                throw new \LogicException(sprintf('Default role provider must be of type array or false, got "%s".', \gettype($value['default'])));
+                            }
+                        }
+
+                        return $value;
+                    })
+                ->end()
+                ->validate()
+                    ->always(function (array $value): array {
+                        foreach ($value as $k => $v) {
+                            if ('default' !== $k && !\is_string($v)) {
+                                throw new \LogicException(sprintf('Role provider must be of type string, got "%s".', \gettype($v)));
+                            }
+                        }
+
+                        return $value;
+                    })
+                ->end()
+                ->variablePrototype()->end()
             ->end()
             ->arrayNode('doctrine')
                 ->addDefaultsIfNotSet()

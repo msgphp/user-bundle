@@ -19,7 +19,7 @@ use MsgPhp\User\Entity\Role as BaseRole;
  */
 class Role extends BaseRole
 {
-    /** @ORM\Id() @ORM\Column() */
+    /** @ORM\Id() @ORM\Column(length=%msgphp.doctrine.mapping_config.key_max_length%) */
     private \$name;
 
     public function __construct(string \$name)

@@ -6,6 +6,7 @@ namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
+use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
 use MsgPhp\User\{CredentialInterface, Entity, Role};
 use MsgPhp\User\Password\PasswordAlgorithm;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
@@ -34,6 +35,7 @@ final class UserMaker implements MakerInterface
 {
     private $classMapping;
     private $projectDir;
+    private $mappingConfig;
     private $credential;
     private $passwordReset = false;
     private $configs = [];
@@ -44,10 +46,11 @@ final class UserMaker implements MakerInterface
     /** @var \ReflectionClass */
     private $user;
 
-    public function __construct(array $classMapping, string $projectDir)
+    public function __construct(array $classMapping, string $projectDir, MappingConfig $mappingConfig)
     {
         $this->classMapping = $classMapping;
         $this->projectDir = $projectDir;
+        $this->mappingConfig = $mappingConfig;
     }
 
     public static function getCommandName(): string
@@ -368,7 +371,7 @@ PHP
             $addUses[Entity\Fields\RolesField::class] = true;
             $addTraitUses['RolesField'] = true;
 
-            $this->writes[] = [$baseDir.'/Role.php', self::getSkeleton('entity/Role.php', $vars)];
+            $this->writes[] = [$baseDir.'/Role.php', $this->mappingConfig->interpolate(self::getSkeleton('entity/Role.php', $vars))];
             $this->writes[] = [$baseDir.'/UserRole.php', self::getSkeleton('entity/UserRole.php', $vars)];
             $this->configs[] = ['class_mapping' => [
                 Entity\Role::class => $ns.'\\Role',

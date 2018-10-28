@@ -13,13 +13,13 @@ return function (ContainerConfigurator $container): void {
     $container->services()
         ->defaults()
             ->autowire()
+            ->autoconfigure()
             ->private()
 
         ->load('MsgPhp\\User\\Infra\\Doctrine\\Repository\\', Configuration::getPackageDir().'/Infra/Doctrine/Repository/*Repository.php')
             ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
 
-        ->set(Doctrine\ObjectFieldMappings::class)
-            ->tag('msgphp.doctrine.object_field_mappings', ['priority' => -100])
+        ->set(Doctrine\ObjectMappings::class)
 
         ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')

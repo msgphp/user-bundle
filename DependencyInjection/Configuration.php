@@ -31,12 +31,6 @@ final class Configuration implements ConfigurationInterface
         Entity\UserRole::class => ['user', 'role'],
         Entity\UserEmail::class => ['email'],
     ];
-    public const DEFAULT_ID_CLASS_MAPPING = [
-        UserIdInterface::class => UserId::class,
-    ];
-    public const UUID_CLASS_MAPPING = [
-        UserIdInterface::class => UuidInfra\UserId::class,
-    ];
     public const DOCTRINE_TYPE_MAPPING = [
         UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
     ];
@@ -59,6 +53,12 @@ final class Configuration implements ConfigurationInterface
         Command\DeleteUserRoleCommand::class => [ConsoleInfra\Command\DeleteUserRoleCommand::class],
         Command\DisableUserCommand::class => [ConsoleInfra\Command\DisableUserCommand::class],
         Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
+    ];
+    private const DEFAULT_ID_MAPPING = [
+        UserIdInterface::class => UserId::class,
+    ];
+    private const UUID_MAPPING = [
+        UserIdInterface::class => UuidInfra\UserId::class,
     ];
     private const COMMAND_MAPPING = [
         Entity\Role::class => [
@@ -206,8 +206,8 @@ final class Configuration implements ConfigurationInterface
         ->end()
         ->validate()
             ->always(ConfigHelper::defaultBundleConfig(
-                self::DEFAULT_ID_CLASS_MAPPING,
-                array_fill_keys(ConfigHelper::UUID_TYPES, self::UUID_CLASS_MAPPING)
+                self::DEFAULT_ID_MAPPING,
+                array_fill_keys(ConfigHelper::UUID_TYPES, self::UUID_MAPPING)
             ))
         ->end()
         ->validate()

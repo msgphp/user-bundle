@@ -19,7 +19,7 @@ return function (ContainerConfigurator $container): void {
         ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\Repository\\', Configuration::getPackageGlob().'/Infra/Doctrine/Repository/*Repository.php')
             ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
 
-        ->set(Doctrine\ObjectMappings::class)
+        ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\', Configuration::getPackageGlob().'/Infra/Doctrine/*ObjectMappings.php')
 
         ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')

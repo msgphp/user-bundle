@@ -301,8 +301,8 @@ final class UserMaker implements MakerInterface
             }
 
             $credential = $io->choice('Select credential type:', $credentials, 'EmailPassword');
-            $credentialClass = $this->credential = 'MsgPhp\\User\\Entity\\Credential\\'.$credential;
-            $credentialTrait = 'MsgPhp\\User\\Entity\\Features\\'.($credentialName = $credential.'Credential');
+            $credentialClass = $this->credential = Configuration::PACKAGE_NS.'Entity\\Credential\\'.$credential;
+            $credentialTrait = Configuration::PACKAGE_NS.'Entity\\Features\\'.($credentialName = $credential.'Credential');
             $credentialSignature = self::getConstructorSignature(new \ReflectionClass($credentialClass));
             $credentialInit = '$this->credential = new '.$credential.'('.self::getSignatureVariables($credentialSignature).');';
 

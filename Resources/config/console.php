@@ -12,6 +12,6 @@ return function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private()
 
-        ->load('MsgPhp\\User\\Infra\\Console\\Command\\', Configuration::getPackageGlob().'/Infra/Console/Command/*Command.php')
+        ->load(Configuration::PACKAGE_NS.'Infra\\Console\\Command\\', Configuration::getPackageGlob().'/Infra/Console/Command/*Command.php')
     ;
 };

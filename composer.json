@@ -27,6 +27,7 @@
         "doctrine/doctrine-bundle": "^1.8",
         "doctrine/orm": "^2.6",
         "lexik/jwt-authentication-bundle": "^2.5",
+        "msgphp/user-eav": "^0.8",
         "msgphp/eav-bundle": "^0.8",
         "simple-bus/symfony-bridge": "^5.1",
         "symfony/console": "^3.4|^4.0",
@@ -40,6 +41,7 @@
         "symfony/var-dumper": "^3.4|^4.0"
     },
     "suggest": {
+        "msgphp/user-eav": "To enable user attribute values",
         "msgphp/eav-bundle": "To enable user attribute values"
     },
     "config": {

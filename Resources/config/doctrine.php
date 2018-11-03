@@ -16,7 +16,7 @@ return function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private()
 
-        ->load('MsgPhp\\User\\Infra\\Doctrine\\Repository\\', Configuration::getPackageDir().'/Infra/Doctrine/Repository/*Repository.php')
+        ->load('MsgPhp\\User\\Infra\\Doctrine\\Repository\\', Configuration::getPackageGlob().'/Infra/Doctrine/Repository/*Repository.php')
             ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
 
         ->set(Doctrine\ObjectMappings::class)

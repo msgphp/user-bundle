@@ -11,7 +11,7 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->private()
 
-        ->load('MsgPhp\\User\\Command\\Handler\\', Configuration::getPackageDir().'/Command/Handler/*Handler.php')
+        ->load('MsgPhp\\User\\Command\\Handler\\', Configuration::getPackageGlob().'/Command/Handler/*Handler.php')
             ->tag('msgphp.domain.command_handler')
     ;
 };

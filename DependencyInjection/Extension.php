@@ -52,8 +52,8 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         // message infra
         $loader->load('message.php');
         ExtensionHelper::finalizeCommandHandlers($container, $config['class_mapping'], $config['commands'], array_map(function (string $file): string {
-            return 'MsgPhp\\User\\Event\\'.basename($file, '.php');
-        }, glob(Configuration::getPackageDir().'/Event/*Event.php')));
+            return Configuration::PACKAGE_NS.'Event\\'.basename($file, '.php');
+        }, glob(Configuration::getPackageGlob().'/Event/*Event.php', \GLOB_BRACE)));
 
         // persistence infra
         if (FeatureDetection::isDoctrineOrmAvailable($container)) {
@@ -94,7 +94,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 $config['class_mapping'],
                 $config['id_type_mapping'],
                 Configuration::DOCTRINE_TYPE_MAPPING,
-                self::getDoctrineMappingFiles($config, $container)
+                glob(Configuration::getPackageGlob().'/Infra/Doctrine/Resources/dist-mapping/*.orm.xml', \GLOB_BRACE)
             );
         }
 
@@ -114,30 +114,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 ->setClass(SecurityInfra\DataCollector::class)
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE));
         }
-    }
-
-    private static function getDoctrineMappingFiles(array $config, ContainerBuilder $container): array
-    {
-        $baseDir = Configuration::getPackageDir().'/Infra/Doctrine/Resources/dist-mapping';
-        $files = array_flip(glob($baseDir.'/*.orm.xml'));
-
-        if (!isset($config['class_mapping'][Entity\Role::class])) {
-            unset($files[$baseDir.'/User.Entity.Role.orm.xml'], $files[$baseDir.'/User.Entity.UserRole.orm.xml']);
-        }
-
-        if (!isset($config['class_mapping'][Entity\UserEmail::class])) {
-            unset($files[$baseDir.'/User.Entity.UserEmail.orm.xml']);
-        }
-
-        if (!isset($config['class_mapping'][Entity\Username::class])) {
-            unset($files[$baseDir.'/User.Entity.Username.orm.xml']);
-        }
-
-        if (!FeatureDetection::hasMsgPhpEavBundle($container)) {
-            unset($files[$baseDir.'/User.Entity.UserAttributeValue.orm.xml']);
-        }
-
-        return array_keys($files);
     }
 
     private function loadDoctrineOrm(array $config, LoaderInterface $loader, ContainerBuilder $container): void

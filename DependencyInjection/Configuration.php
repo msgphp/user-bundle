@@ -20,6 +20,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  */
 final class Configuration implements ConfigurationInterface
 {
+    public const PACKAGE_NS = 'MsgPhp\\User\\';
     public const AGGREGATE_ROOTS = [
         Entity\User::class => UserIdInterface::class,
     ];
@@ -100,11 +101,33 @@ final class Configuration implements ConfigurationInterface
     ];
     private const DEFAULT_ROLE = 'ROLE_USER';
 
-    private static $packageDir;
+    private static $packageDirs;
 
-    public static function getPackageDir(): string
+    /**
+     * @return string[]
+     */
+    public static function getPackageDirs(): array
     {
-        return self::$packageDir ?? (self::$packageDir = \dirname((string) (new \ReflectionClass(UserIdInterface::class))->getFileName()));
+        if (null !== self::$packageDirs) {
+            return self::$packageDirs;
+        }
+
+        $packageDirs = [
+            \dirname((string) (new \ReflectionClass(UserIdInterface::class))->getFileName()),
+        ];
+
+        if (class_exists(Entity\UserAttributeValue::class)) {
+            $packageDirs[] = \dirname((string) (new \ReflectionClass(Entity\UserAttributeValue::class))->getFileName(), 2);
+        }
+
+        return self::$packageDirs = $packageDirs;
+    }
+
+    public static function getPackageGlob(): string
+    {
+        $dirs = self::getPackageDirs();
+
+        return isset($dirs[1]) ? '{'.implode(',', $dirs).'}' : $dirs[0];
     }
 
     public function getConfigTreeBuilder(): TreeBuilder
@@ -118,6 +141,7 @@ final class Configuration implements ConfigurationInterface
                 ->disallowClasses([CredentialInterface::class])
                 ->groupClasses([Entity\Role::class, Entity\UserRole::class])
                 ->subClassValues()
+                ->hint(Entity\UserAttributeValue::class, 'Try running "composer require msgphp/user-eav msgphp/eav-bundle".')
             ->end()
             ->classMappingNode('id_type_mapping')
                 ->subClassKeys([DomainIdInterface::class])

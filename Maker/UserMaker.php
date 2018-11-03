@@ -290,7 +290,7 @@ final class UserMaker implements MakerInterface
 
         if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
-            foreach (glob(Configuration::getPackageDir().'/Entity/Credential/*.php') as $file) {
+            foreach (glob(Configuration::getPackageGlob().'/Entity/Credential/*.php', \GLOB_BRACE) as $file) {
                 if ('Anonymous' === ($credential = basename($file, '.php')) || false !== strpos($credential, 'SaltedPassword')) {
                     continue;
                 }

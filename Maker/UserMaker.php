@@ -80,23 +80,26 @@ final class UserMaker implements MakerInterface
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
         }
 
+        $continue = true;
+        if (!class_exists(Differ::class)) {
+            $io->note(['It\'s recommended to (temporarily) enable the Diff implementation for better reviewing changes, run:', 'composer require --dev sebastian/diff']);
+            $continue = false;
+        }
         if (!interface_exists(EntityManagerInterface::class)) {
             $io->note(['It\'s recommended to enable Doctrine ORM, run:', 'composer require orm']);
-
-            if (!$io->confirm('Continue anyway?')) {
-                return;
-            }
+            $continue = false;
         }
 
         if (!interface_exists(MessageBusInterface::class)) {
             $io->note(['It\'s recommended to enable Symfony Messenger, run:', 'composer require messenger']);
-
-            if (!$io->confirm('Continue anyway?')) {
-                return;
-            }
+            $continue = false;
         }
 
-        if ($io->confirm('Enable Symfony Messenger configuration? (config/packages/messenger.yaml)')) {
+        if (!$continue && !$io->confirm('Continue anyway?', false)) {
+            return;
+        }
+
+        if ($io->confirm('Enable Symfony Messenger configuration (recommended)? (config/packages/messenger.yaml)')) {
             $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
         }
 
@@ -460,7 +463,7 @@ PHP
         ) {
             $io->warning(['Not all controller dependencies are met, run:', 'composer require annotations router form validator twig messenger']);
 
-            if (!$io->confirm('Continue anyway?')) {
+            if (!$io->confirm('Continue anyway?', false)) {
                 return;
             }
         }
@@ -479,7 +482,7 @@ PHP
             if (!class_exists(Security::class)) {
                 $io->warning(['Not all controller dependencies are met, run:', 'composer require security']);
 
-                if (!$io->confirm('Continue anyway?')) {
+                if (!$io->confirm('Continue anyway?', false)) {
                     return;
                 }
             }

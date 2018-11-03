@@ -14,28 +14,6 @@ This package is part of the _Message driven PHP_ project.
 composer require msgphp/user-bundle
 ```
 
-## Features
-
-- Symfony 3.4 / 4.0 ready
-- Symfony console commands
-- Symfony messenger commands & events
-- Symfony security infrastructure
-- Symfony validators
-- Doctrine persistence
-- Credential independent (supports e-mail, nickname, etc.)
-- Multiple username support
-- Primary and secondary user e-mails
-- Disabled / enabled users
-- User roles
-- User attribute values
-
-## Blog Posts
-
-- [Adding user management to your Symfony application](https://medium.com/@ro0NL/adding-user-management-to-your-symfony-application-ceeefe2a2e9)
-- [Commanding a decoupled User entity](https://medium.com/@ro0NL/commanding-a-decoupled-user-entity-aee8723c43e5)
-- [Decoupling the User entity with a new Symfony User Bundle](https://medium.com/@ro0NL/decoupling-the-user-entity-with-a-new-symfony-user-bundle-7d2d5d85bdf9)
-- [Building a new Symfony User Bundle](https://medium.com/@ro0NL/building-a-new-symfony-user-bundle-b4fe5a9d9d80)
-
 ## Configuration
 
 ```php

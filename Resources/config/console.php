@@ -16,7 +16,7 @@ return function (ContainerConfigurator $container): void {
     foreach (Configuration::getPackageDirs() as $dir) {
         if (is_dir($commandDir = $dir.'/Infra/Console/Command')) {
             $services
-                ->load(Configuration::PACKAGE_NS.'Infra\\Console\\Command\\', $commandDir.'/*Command.php');
+                ->load(Configuration::PACKAGE_NS.'Infra\\Console\\Command\\', $commandDir.'/*Command.php')
             ;
         }
     }

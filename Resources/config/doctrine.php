@@ -10,20 +10,24 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
 
 return function (ContainerConfigurator $container): void {
-    $container->services()
+    $services = $container->services()
         ->defaults()
             ->autowire()
             ->autoconfigure()
             ->private()
-
-        ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\Repository\\', Configuration::getPackageGlob().'/Infra/Doctrine/Repository/*Repository.php')
-            ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
-
-        ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\', Configuration::getPackageGlob().'/Infra/Doctrine/*ObjectMappings.php')
 
         ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::loadClassMetadata])
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::postFlush])
     ;
+
+    foreach (Configuration::getPackageDirs() as $dir) {
+        $services
+            ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\Repository\\', $dir.'/Infra/Doctrine/Repository/*Repository.php')
+                ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
+
+            ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\', $dir.'/Infra/Doctrine/*ObjectMappings.php')
+        ;
+    }
 };

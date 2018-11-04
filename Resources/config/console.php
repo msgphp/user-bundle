@@ -6,12 +6,18 @@ use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return function (ContainerConfigurator $container): void {
-    $container->services()
+    $services = $container->services()
         ->defaults()
             ->autowire()
             ->autoconfigure()
             ->private()
-
-        ->load(Configuration::PACKAGE_NS.'Infra\\Console\\Command\\', Configuration::getPackageGlob().'/Infra/Console/Command/*Command.php')
     ;
+
+    foreach (Configuration::getPackageDirs() as $dir) {
+        if (is_dir($commandDir = $dir.'/Infra/Console/Command')) {
+            $services
+                ->load(Configuration::PACKAGE_NS.'Infra\\Console\\Command\\', $commandDir.'/*Command.php');
+            ;
+        }
+    }
 };

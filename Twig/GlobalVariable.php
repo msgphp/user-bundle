@@ -9,7 +9,6 @@ use MsgPhp\User\Infra\Security\SecurityUser;
 use MsgPhp\User\Repository\UserRepositoryInterface;
 use MsgPhp\User\UserIdInterface;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\DependencyInjection\ServiceSubscriberInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
@@ -17,7 +16,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
  *
  * @internal
  */
-final class GlobalVariable implements ServiceSubscriberInterface
+final class GlobalVariable
 {
     public const NAME = 'msgphp_user';
 
@@ -53,14 +52,6 @@ final class GlobalVariable implements ServiceSubscriberInterface
     public function isUserType(User $user, string $class): bool
     {
         return $user instanceof $class;
-    }
-
-    public static function getSubscribedServices(): array
-    {
-        return [
-            '?'.TokenStorageInterface::class,
-            '?'.UserRepositoryInterface::class,
-        ];
     }
 
     private function getTokenStorage(): TokenStorageInterface

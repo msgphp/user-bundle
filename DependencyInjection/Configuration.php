@@ -7,10 +7,11 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 use MsgPhp\Domain\DomainIdInterface;
 use MsgPhp\Domain\Entity\Features;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
-use MsgPhp\Domain\Infra\Config\{NodeBuilder, TreeBuilder};
+use MsgPhp\Domain\Infra\Config\{NodeBuilder, TreeBuilderHelper};
 use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
 use MsgPhp\User\{Command, CredentialInterface, Entity, UserId, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Uuid as UuidInfra};
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
@@ -133,8 +134,7 @@ final class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         /** @var NodeBuilder $children */
-        $children = ($treeBuilder = new TreeBuilder())->rootArray(Extension::ALIAS)->children();
-
+        $children = TreeBuilderHelper::root(Extension::ALIAS, $treeBuilder)->children();
         $children
             ->classMappingNode('class_mapping')
                 ->requireClasses([Entity\User::class])

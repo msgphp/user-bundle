@@ -20,9 +20,9 @@ framework:
                 middleware:
                     - msgphp.messenger.console_message_receiver
             event_bus:
+                default_middleware: allow_no_handlers
                 middleware:
                     - msgphp.messenger.console_message_receiver
-                    - allow_no_handler
 
 services:
     msgphp.messenger.command_bus: '@command_bus'

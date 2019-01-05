@@ -41,7 +41,8 @@ PHP;
                         })
                         ->normalizer(function (string \$value): string {
                             return \$this->passwordHashing->hash(\$value);
-                        });
+                        })
+                    ;
                 }
                 break;
 PHP;

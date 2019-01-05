@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 if ($hasForgotPassword) {
-    $forgotPasswordLink = <<<TWIG
+    $forgotPasswordLink = <<<'TWIG'
 
             <p><a href="{{ url('forgot_password') }}">Forgot password?</a></p>
 TWIG;

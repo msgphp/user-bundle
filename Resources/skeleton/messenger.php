@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-return <<<YAML
+return <<<'YAML'
 # see https://github.com/symfony/recipes/blob/master/symfony/messenger/4.1/config/packages/messenger.yaml
 framework:
     messenger:

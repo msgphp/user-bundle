@@ -11,9 +11,9 @@ $uses = [
 $cases = [];
 
 if (false !== strpos($credentialClass, 'Email')) {
-    $cases[] = <<<PHP
+    $cases[] = <<<'PHP'
             case 'email':
-                \$element->label = 'E-mail';
+                $element->label = 'E-mail';
                 break;
 PHP;
 }
@@ -21,13 +21,13 @@ PHP;
 $constructor = '{';
 if (false !== strpos($credentialClass, 'Password')) {
     $uses[] = 'use MsgPhp\User\Password\PasswordHashingInterface;';
-    $constructor = <<<PHP
+    $constructor = <<<'PHP'
 {
-    private \$passwordHashing;
+    private $passwordHashing;
 
-    public function __construct(PasswordHashingInterface \$passwordHashing)
+    public function __construct(PasswordHashingInterface $passwordHashing)
     {
-        \$this->passwordHashing = \$passwordHashing;
+        $this->passwordHashing = $passwordHashing;
     }
 
 PHP;

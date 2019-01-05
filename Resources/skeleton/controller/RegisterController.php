@@ -44,7 +44,7 @@ final class RegisterController
 
         if (\$form->isSubmitted() && \$form->isValid()) {
             \$bus->dispatch(new CreateUserCommand(\$form->getData()));
-            \$flashBag->add('success', 'You\'re successfully registered.');
+            \$flashBag->add('success', 'You\\'re successfully registered.');
 
             return new RedirectResponse('${redirect}');
         }

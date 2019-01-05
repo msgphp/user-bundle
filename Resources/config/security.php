@@ -31,7 +31,8 @@ return function (ContainerConfigurator $container): void {
 
     if (interface_exists(ParamConverterInterface::class)) {
         $services->set(Security\UserParamConverter::class)
-            ->tag('request.param_converter', ['converter' => Security\UserParamConverter::NAME]);
+            ->tag('request.param_converter', ['converter' => Security\UserParamConverter::NAME])
+        ;
     }
 
     if (interface_exists(PayloadAwareUserProviderInterface::class)) {

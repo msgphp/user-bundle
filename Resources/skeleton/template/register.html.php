@@ -7,7 +7,7 @@ $fields = <<<TWIG
 TWIG;
 
 if ($hasPassword) {
-    $fields .= <<<TWIG
+    $fields .= <<<'TWIG'
 
         {{ form_row(form.password.password) }}
         {{ form_row(form.password.confirmation) }}

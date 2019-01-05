@@ -48,7 +48,7 @@ final class ForgotPasswordController
         if (\$form->isSubmitted() && \$form->isValid()) {
             \$user = \$em->getRepository(${userShortClass}::class)->findOneBy(['credential.${fieldName}' => \$form->getData()['${fieldName}']]);
             \$bus->dispatch(new RequestUserPasswordCommand(\$user->getId()));
-            \$flashBag->add('success', 'You\'re password is requested.');
+            \$flashBag->add('success', 'You\\'re password is requested.');
 
             return new RedirectResponse('/login');
         }

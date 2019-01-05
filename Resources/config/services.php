@@ -26,6 +26,7 @@ return function (ContainerConfigurator $container): void {
         $services->set(Maker\UserMaker::class, Maker\UserMaker::class)
             ->arg('$classMapping', '%msgphp.domain.class_mapping%')
             ->arg('$projectDir', '%kernel.project_dir%')
-            ->tag('maker.command');
+            ->tag('maker.command')
+        ;
     }
 };

@@ -28,9 +28,9 @@ PHP;
 
 if ($hasPassword) {
     $uses[] = 'use MsgPhp\\User\\Infra\\Form\\Type\\HashedPasswordType;';
-    $fields .= <<<PHP
+    $fields .= <<<'PHP'
 
-        \$builder->add('password', HashedPasswordType::class, [
+        $builder->add('password', HashedPasswordType::class, [
             'password_confirm' => true,
             'password_options' => ['constraints' => new NotBlank()],
         ]);

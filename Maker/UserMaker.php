@@ -487,7 +487,7 @@ PHP
                 }
             }
 
-            $this->routes[] = <<<PHP
+            $this->routes[] = <<<'PHP'
 ->add('logout', '/logout')
 PHP;
             $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', self::getSkeleton('security.php', [

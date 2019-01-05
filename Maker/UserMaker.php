@@ -491,7 +491,7 @@ PHP
 ->add('logout', '/logout')
 PHP;
             $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', self::getSkeleton('security.php', [
-                'hashAlgorithm' => $this->getPassordHashAlgorithm(),
+                'hashAlgorithm' => $this->getPasswordHashAlgorithm(),
                 'fieldName' => $usernameField,
             ])];
         }
@@ -668,7 +668,7 @@ PHP;
         return $this->hasCredential() && false !== strpos($this->credential, 'Password');
     }
 
-    private function getPassordHashAlgorithm(): string
+    private function getPasswordHashAlgorithm(): string
     {
         if ($this->hasCredential() && false !== strpos($this->credential, 'SaltedPassword')) {
             return PasswordAlgorithm::DEFAULT_LEGACY;

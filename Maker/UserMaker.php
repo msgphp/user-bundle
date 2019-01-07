@@ -42,6 +42,7 @@ final class UserMaker implements MakerInterface
     private $services = [];
     private $routes = [];
     private $writes = [];
+    private $interactive = false;
 
     /** @var \ReflectionClass */
     private $user;
@@ -75,6 +76,7 @@ final class UserMaker implements MakerInterface
         $this->credential = $this->user = null;
         $this->passwordReset = false;
         $this->configs = $this->services = $this->routes = $this->writes = [];
+        $this->interactive = $input->isInteractive();
 
         if (!isset($this->classMapping[Entity\User::class])) {
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
@@ -178,7 +180,7 @@ final class UserMaker implements MakerInterface
         $io->success('Done!');
         $io->note('Don\'t forget to update your database schema, if needed');
 
-        if ($io->confirm('Show written file names?')) {
+        if ($written && $io->confirm('Show written file names?')) {
             sort($written);
             $io->listing($written);
         }
@@ -387,7 +389,7 @@ PHP
         do {
             do {
                 $defaultRole = $io->ask('Provide a default user role (e.g. <comment>ROLE_USER</>)');
-            } while (null === $defaultRole);
+            } while (null === $defaultRole && $this->interactive);
             $defaultRoles[] = $defaultRole;
         } while ($io->confirm('Add another default user role?', false));
 

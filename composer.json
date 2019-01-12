@@ -29,7 +29,6 @@
         "lexik/jwt-authentication-bundle": "^2.5",
         "msgphp/user-eav": "^0.8",
         "msgphp/eav-bundle": "^0.8",
-        "simple-bus/symfony-bridge": "^5.1",
         "symfony/console": "^3.4|^4.0",
         "symfony/form": "^3.4|^4.0",
         "symfony/maker-bundle": "^1.5",

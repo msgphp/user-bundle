@@ -8,7 +8,7 @@ use MsgPhp\Domain\DomainIdInterface;
 use MsgPhp\Domain\Entity\Features;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
 use MsgPhp\Domain\Infra\Config\{NodeBuilder, TreeBuilderHelper};
-use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
+use MsgPhp\Domain\Infra\DependencyInjection\{ConfigHelper, PackageMetadata};
 use MsgPhp\User\{Command, CredentialInterface, Entity, UserId, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Uuid as UuidInfra};
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -102,33 +102,23 @@ final class Configuration implements ConfigurationInterface
     ];
     private const DEFAULT_ROLE = 'ROLE_USER';
 
-    private static $packageDirs;
+    private static $packageMetadata;
 
-    /**
-     * @return string[]
-     */
-    public static function getPackageDirs(): array
+    public static function getPackageMetadata(): PackageMetadata
     {
-        if (null !== self::$packageDirs) {
-            return self::$packageDirs;
+        if (null !== self::$packageMetadata) {
+            return self::$packageMetadata;
         }
 
-        $packageDirs = [
+        $dirs = [
             \dirname((string) (new \ReflectionClass(UserIdInterface::class))->getFileName()),
         ];
 
         if (class_exists(Entity\UserAttributeValue::class)) {
-            $packageDirs[] = \dirname((string) (new \ReflectionClass(Entity\UserAttributeValue::class))->getFileName(), 2);
+            $dirs[] = \dirname((string) (new \ReflectionClass(Entity\UserAttributeValue::class))->getFileName(), 2);
         }
 
-        return self::$packageDirs = $packageDirs;
-    }
-
-    public static function getPackageGlob(): string
-    {
-        $dirs = self::getPackageDirs();
-
-        return isset($dirs[1]) ? '{'.implode(',', $dirs).'}' : $dirs[0];
+        return self::$packageMetadata = new PackageMetadata(self::PACKAGE_NS, $dirs);
     }
 
     public function getConfigTreeBuilder(): TreeBuilder

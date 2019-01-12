@@ -12,10 +12,10 @@ return function (ContainerConfigurator $container): void {
             ->private()
     ;
 
-    foreach (Configuration::getPackageDirs() as $dir) {
-        $services
-            ->load(Configuration::PACKAGE_NS.'Command\\Handler\\', $dir.'/Command/Handler/*Handler.php')
-                ->tag('msgphp.domain.command_handler')
-        ;
+    foreach (Configuration::getPackageMetadata()->getMessageServicePrototypes() as $resource => $namespace) {
+        $prototype = $services->load($namespace, $resource);
+        if (Configuration::PACKAGE_NS.'Command\\Handler\\' == $namespace) {
+            $prototype->tag('msgphp.domain.command_handler');
+        }
     }
 };

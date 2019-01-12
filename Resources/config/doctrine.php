@@ -15,6 +15,7 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->autoconfigure()
             ->private()
+            ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
 
         ->set(Doctrine\Event\UsernameListener::class)
             ->tag('doctrine.orm.entity_listener')
@@ -22,12 +23,7 @@ return function (ContainerConfigurator $container): void {
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::postFlush])
     ;
 
-    foreach (Configuration::getPackageDirs() as $dir) {
-        $services
-            ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\Repository\\', $dir.'/Infra/Doctrine/Repository/*Repository.php')
-                ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
-
-            ->load(Configuration::PACKAGE_NS.'Infra\\Doctrine\\', $dir.'/Infra/Doctrine/*ObjectMappings.php')
-        ;
+    foreach (Configuration::getPackageMetadata()->getDoctrineServicePrototypes() as $resource => $namespace) {
+        $services->load($namespace, $resource);
     }
 };

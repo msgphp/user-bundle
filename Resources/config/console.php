@@ -13,11 +13,7 @@ return function (ContainerConfigurator $container): void {
             ->private()
     ;
 
-    foreach (Configuration::getPackageDirs() as $dir) {
-        if (is_dir($commandDir = $dir.'/Infra/Console/Command')) {
-            $services
-                ->load(Configuration::PACKAGE_NS.'Infra\\Console\\Command\\', $commandDir.'/*Command.php')
-            ;
-        }
+    foreach (Configuration::getPackageMetadata()->getConsoleServicePrototypes() as $resource => $namespace) {
+        $services->load($namespace, $resource);
     }
 };

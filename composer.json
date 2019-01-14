@@ -1,45 +1,41 @@
 {
     "name": "msgphp/user-bundle",
     "type": "symfony-bundle",
-    "license": "MIT",
     "description": "Basic user management (the `User` domain)",
-    "keywords": ["user", "security"],
+    "keywords": [
+        "user",
+        "security"
+    ],
+    "license": "MIT",
     "authors": [
         {
             "name": "Roland Franssen",
             "email": "franssen.roland@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
-    "autoload": {
-        "psr-4": {
-            "MsgPhp\\UserBundle\\": ""
-        },
-        "exclude-from-classmap": ["/Tests/"]
-    },
     "require": {
         "msgphp/user": "^0.8",
-        "symfony/config": "^3.4|^4.0",
-        "symfony/dependency-injection": "^3.4|^4.0",
-        "symfony/http-kernel": "^3.4|^4.0"
+        "symfony/config": "^3.4 || ^4.0",
+        "symfony/dependency-injection": "^3.4 || ^4.0",
+        "symfony/http-kernel": "^3.4 || ^4.0"
     },
     "require-dev": {
         "doctrine/doctrine-bundle": "^1.8",
         "doctrine/orm": "^2.6",
         "lexik/jwt-authentication-bundle": "^2.5",
-        "msgphp/user-eav": "^0.8",
         "msgphp/eav-bundle": "^0.8",
-        "symfony/console": "^3.4|^4.0",
-        "symfony/form": "^3.4|^4.0",
+        "msgphp/user-eav": "^0.8",
+        "symfony/console": "^3.4 || ^4.0",
+        "symfony/form": "^3.4 || ^4.0",
         "symfony/maker-bundle": "^1.5",
         "symfony/messenger": "^4.2",
-        "symfony/security-bundle": "^3.4|^4.0",
-        "symfony/twig-bundle": "^3.4|^4.0",
-        "symfony/validator": "^3.4|^4.0"
+        "symfony/security-bundle": "^3.4 || ^4.0",
+        "symfony/twig-bundle": "^3.4 || ^4.0",
+        "symfony/validator": "^3.4 || ^4.0"
     },
     "suggest": {
-        "msgphp/user-eav": "To enable user attribute values",
-        "msgphp/eav-bundle": "To enable user attribute values"
+        "msgphp/eav-bundle": "To enable user attribute values",
+        "msgphp/user-eav": "To enable user attribute values"
     },
     "config": {
         "preferred-install": {
@@ -51,5 +47,14 @@
         "branch-alias": {
             "dev-master": "0.8-dev"
         }
-    }
+    },
+    "autoload": {
+        "psr-4": {
+            "MsgPhp\\UserBundle\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "minimum-stability": "dev"
 }

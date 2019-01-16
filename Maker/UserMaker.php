@@ -628,9 +628,9 @@ PHP;
         return isset($matches[0][0]) ? implode(', ', $matches[0]) : '';
     }
 
-    private static function getSkeleton(string $path, array $vars = [])
+    private static function getSkeleton(string $path, array $vars = []): string
     {
-        return (function () use ($path, $vars) {
+        return (function () use ($path, $vars): string {
             extract($vars);
 
             return require \dirname(__DIR__).'/Resources/skeleton/'.$path;

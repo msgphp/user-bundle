@@ -322,7 +322,7 @@ final class UserMaker implements MakerInterface
                 $offset = $constructor->getStartLine() - 1;
                 $length = $constructor->getEndLine() - $offset;
                 $contents = preg_replace_callback_array([
-                    '~^[^_]*+__construct\([^\)]*+\)~i' => function (array $match) use ($credentialSignature): string {
+                    '~^[^_]*+__construct\([^)]*+\)~i' => function (array $match) use ($credentialSignature): string {
                         $signature = substr($match[0], 0, -1);
                         if ('' !== $credentialSignature) {
                             $signature .= ('(' !== substr(rtrim($signature), -1) ? ', ' : '').$credentialSignature;
@@ -614,7 +614,7 @@ PHP;
         $offset = $constructor->getStartLine() - 1;
         $body = implode('', \array_slice($lines, $offset, $constructor->getEndLine() - $offset));
 
-        if (preg_match('~^[^_]*+__construct\(([^\)]++)\)~i', $body, $matches)) {
+        if (preg_match('~^[^_]*+__construct\(([^)]++)\)~i', $body, $matches)) {
             return $matches[1];
         }
 

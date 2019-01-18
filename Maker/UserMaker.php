@@ -631,7 +631,7 @@ PHP;
     private static function getSkeleton(string $path, array $vars = []): string
     {
         return (function () use ($path, $vars): string {
-            extract($vars);
+            extract($vars, \EXTR_OVERWRITE);
 
             return require \dirname(__DIR__).'/Resources/skeleton/'.$path;
         })();
@@ -656,7 +656,7 @@ PHP;
 
     private function getClassFileName(string $class): string
     {
-        if ('App\\' === substr($class, 0, 4)) {
+        if (0 === strpos($class, 'App\\')) {
             $class = substr($class, 4);
         }
 

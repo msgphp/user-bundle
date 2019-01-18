@@ -14,7 +14,7 @@ return function (ContainerConfigurator $container): void {
 
     foreach (Configuration::getPackageMetadata()->getMessageServicePrototypes() as $resource => $namespace) {
         $prototype = $services->load($namespace, $resource);
-        if (Configuration::PACKAGE_NS.'Command\\Handler\\' == $namespace) {
+        if (Configuration::PACKAGE_NS.'Command\\Handler\\' === $namespace) {
             $prototype->tag('msgphp.domain.command_handler');
         }
     }

@@ -44,7 +44,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader = new PhpFileLoader($container, new FileLocator(\dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
 
-        ExtensionHelper::configureDomain($container, $config['class_mapping'], Configuration::AGGREGATE_ROOTS, Configuration::IDENTITY_MAPPING);
+        ExtensionHelper::configureDomain($container, $config['class_mapping'], Configuration::IDENTITY_MAPPING);
 
         // default infra
         $loader->load('services.php');

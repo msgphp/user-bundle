@@ -22,9 +22,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 final class Configuration implements ConfigurationInterface
 {
     public const PACKAGE_NS = 'MsgPhp\\User\\';
-    public const AGGREGATE_ROOTS = [
-        Entity\User::class => UserIdInterface::class,
-    ];
     public const IDENTITY_MAPPING = [
         Entity\Role::class => ['name'],
         Entity\UserAttributeValue::class => ['attributeValue'],

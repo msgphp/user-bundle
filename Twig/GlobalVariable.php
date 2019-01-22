@@ -20,6 +20,9 @@ final class GlobalVariable
 {
     public const NAME = 'msgphp_user';
 
+    /**
+     * @var ContainerInterface
+     */
     private $container;
 
     public function __construct(ContainerInterface $container)

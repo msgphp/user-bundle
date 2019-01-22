@@ -99,6 +99,9 @@ final class Configuration implements ConfigurationInterface
     ];
     private const DEFAULT_ROLE = 'ROLE_USER';
 
+    /**
+     * @var PackageMetadata|null
+     */
     private static $packageMetadata;
 
     public static function getPackageMetadata(): PackageMetadata

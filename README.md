@@ -38,7 +38,7 @@ bin/console make:user:msgphp
 
 ## Documentation
 
-- Read the [main documentation](https://msgphp.github.io/docs/)
+- Read the [bundle documentation](https://msgphp.github.io/docs/cookbook/user-bundle/installation/)
 - Try the Symfony [demo application](https://github.com/msgphp/symfony-demo-app)
 - Get support on [Symfony's Slack `#msgphp` channel](https://symfony.com/slack-invite) or [raise an issue](https://github.com/msgphp/msgphp/issues/new)
 

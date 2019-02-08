@@ -2,7 +2,7 @@
 
 A new Symfony bundle for basic user management.
 
-[![Latest Stable Version](https://poser.pugx.org/msgphp/user-bundle/v/stable)](https://packagist.org/packages/msgphp/user-bundle)
+[![Latest Stable Version][packagist:img]][packagist]
 
 ## Installation
 
@@ -46,3 +46,6 @@ bin/console make:user:msgphp
 
 This repository is **READ ONLY**. Issues and pull requests should be submitted in the
 [main development repository](https://github.com/msgphp/msgphp).
+
+[packagist]: https://packagist.org/packages/msgphp/domain
+[packagist:img]: https://img.shields.io/packagist/v/msgphp/domain.svg?style=flat-square

@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "msgphp/user": "^0.8",
+        "msgphp/user": "^0.9",
         "symfony/config": "^3.4 || ^4.0",
         "symfony/dependency-injection": "^3.4 || ^4.0",
         "symfony/http-kernel": "^3.4 || ^4.0"
@@ -23,8 +23,8 @@
         "doctrine/doctrine-bundle": "^1.8",
         "doctrine/orm": "^2.6",
         "lexik/jwt-authentication-bundle": "^2.5",
-        "msgphp/eav-bundle": "^0.8",
-        "msgphp/user-eav": "^0.8",
+        "msgphp/eav-bundle": "^0.9",
+        "msgphp/user-eav": "^0.9",
         "symfony/console": "^3.4 || ^4.0",
         "symfony/form": "^3.4 || ^4.0",
         "symfony/maker-bundle": "^1.5",

@@ -121,24 +121,23 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
             ->setArgument('$usernameField', $config['username_field'])
-            ->setArgument('$usernameClass', $config['username_lookup'] ? $config['class_mapping'][Entity\Username::class] : null)
         ;
-
-        $container->getDefinition(DoctrineInfra\Repository\UsernameRepository::class)
-            ->setArgument('$targetMappings', $config['username_lookup'])
-            ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true])
-        ;
-
-        if ($config['doctrine']['auto_sync_username']) {
-            $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
-                ->setArgument('$targetMappings', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$targetMappings', 'array_keys' => true])
-            ;
-        } else {
-            $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
-        }
 
         ExtensionHelper::finalizeDoctrineOrmRepositories($container, $config['class_mapping'], Configuration::DOCTRINE_REPOSITORY_MAPPING);
+
+        if ($config['username_lookup'] && $config['doctrine']['auto_sync_username']) {
+            $container->getDefinition(DoctrineInfra\UsernameLookup::class)
+                ->setArgument('$mapping', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true])
+            ;
+            $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
+                ->setArgument('$mapping', $config['username_lookup'])
+                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true])
+            ;
+        } else {
+            $container->removeDefinition(DoctrineInfra\UsernameLookup::class);
+            $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
+        }
     }
 
     private function loadConsole(array $config, LoaderInterface $loader, ContainerBuilder $container): void

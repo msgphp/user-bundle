@@ -54,7 +54,7 @@ final class Configuration implements ConfigurationInterface
         Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
     ];
     private const ID_TYPE_MAPPING = [
-        UserIdInterface::class => ['scalar' => ScalarUserId::class, 'uuid' => UuidInfra\UserId::class],
+        UserIdInterface::class => ['scalar' => ScalarUserId::class, 'uuid' => UuidInfra\UserUuid::class],
     ];
     private const COMMAND_MAPPING = [
         Entity\Role::class => [

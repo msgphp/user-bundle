@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MsgPhp\Domain\Event\{DomainEventHandlerInterface, DomainEventHandlerTrait};
+use MsgPhp\Domain\Event\DomainEventHandlerInterface;
+use MsgPhp\Domain\Event\DomainEventHandlerTrait;
 use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
-use MsgPhp\User\{CredentialInterface, Entity, Role};
+use MsgPhp\User\CredentialInterface;
+use MsgPhp\User\Entity;
 use MsgPhp\User\Password\PasswordAlgorithm;
+use MsgPhp\User\Role;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use SebastianBergmann\Diff\Differ;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;

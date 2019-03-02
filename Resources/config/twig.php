@@ -5,9 +5,10 @@ declare(strict_types=1);
 use MsgPhp\User\Repository\UserRepositoryInterface;
 use MsgPhp\UserBundle\Twig;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\{inline, ref};
 
 return function (ContainerConfigurator $container): void {
     $container->services()

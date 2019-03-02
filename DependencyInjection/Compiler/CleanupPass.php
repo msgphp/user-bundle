@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection\Compiler;
 
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
-use MsgPhp\User\{Command, Repository, Role};
-use MsgPhp\User\Infra\{Console as ConsoleInfra, Security as SecurityInfra, Validator as ValidatorInfra};
+use MsgPhp\User\Command;
+use MsgPhp\User\Infra\Console as ConsoleInfra;
+use MsgPhp\User\Infra\Security as SecurityInfra;
+use MsgPhp\User\Infra\Validator as ValidatorInfra;
+use MsgPhp\User\Repository;
+use MsgPhp\User\Role;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 

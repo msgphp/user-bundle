@@ -3,12 +3,13 @@
 declare(strict_types=1);
 
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\PayloadAwareUserProviderInterface;
-use MsgPhp\User\Password\PasswordHashingInterface;
 use MsgPhp\User\Infra\Security;
+use MsgPhp\User\Password\PasswordHashingInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface as SymfonyPasswordEncoderInterface;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\{inline, ref};
 
 return function (ContainerConfigurator $container): void {
     $services = $container->services()

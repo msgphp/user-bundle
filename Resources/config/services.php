@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-use MsgPhp\User\Password\{PasswordHashing, PasswordHashingInterface};
-use MsgPhp\User\Role\{ChainRoleProvider, RoleProviderInterface};
+use MsgPhp\User\Password\PasswordHashing;
+use MsgPhp\User\Password\PasswordHashingInterface;
+use MsgPhp\User\Role\ChainRoleProvider;
+use MsgPhp\User\Role\RoleProviderInterface;
 use MsgPhp\UserBundle\Maker;
 use Symfony\Bundle\MakerBundle\MakerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

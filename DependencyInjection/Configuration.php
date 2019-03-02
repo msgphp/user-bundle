@@ -53,11 +53,8 @@ final class Configuration implements ConfigurationInterface
         Command\DisableUserCommand::class => [ConsoleInfra\Command\DisableUserCommand::class],
         Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
     ];
-    private const DEFAULT_ID_MAPPING = [
-        UserIdInterface::class => UserId::class,
-    ];
-    private const UUID_MAPPING = [
-        UserIdInterface::class => UuidInfra\UserId::class,
+    private const ID_TYPE_MAPPING = [
+        UserIdInterface::class => ['scalar' => UserId::class, 'uuid' => UuidInfra\UserId::class],
     ];
     private const COMMAND_MAPPING = [
         Entity\Role::class => [
@@ -220,10 +217,7 @@ final class Configuration implements ConfigurationInterface
             ->end()
         ->end()
         ->validate()
-            ->always(ConfigHelper::defaultBundleConfig(
-                self::DEFAULT_ID_MAPPING,
-                array_fill_keys(ConfigHelper::UUID_TYPES, self::UUID_MAPPING)
-            ))
+            ->always(ConfigHelper::defaultBundleConfig(self::ID_TYPE_MAPPING))
         ->end()
         ->validate()
             ->always(function (array $config): array {

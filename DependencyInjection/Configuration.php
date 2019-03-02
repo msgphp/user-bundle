@@ -9,7 +9,7 @@ use MsgPhp\Domain\Entity\Features;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
 use MsgPhp\Domain\Infra\Config\{NodeBuilder, TreeBuilderHelper};
 use MsgPhp\Domain\Infra\DependencyInjection\{ConfigHelper, PackageMetadata};
-use MsgPhp\User\{Command, CredentialInterface, Entity, UserId, UserIdInterface};
+use MsgPhp\User\{Command, CredentialInterface, Entity, ScalarUserId, UserIdInterface};
 use MsgPhp\User\Infra\{Console as ConsoleInfra, Doctrine as DoctrineInfra, Uuid as UuidInfra};
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -54,7 +54,7 @@ final class Configuration implements ConfigurationInterface
         Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
     ];
     private const ID_TYPE_MAPPING = [
-        UserIdInterface::class => ['scalar' => UserId::class, 'uuid' => UuidInfra\UserId::class],
+        UserIdInterface::class => ['scalar' => ScalarUserId::class, 'uuid' => UuidInfra\UserId::class],
     ];
     private const COMMAND_MAPPING = [
         Entity\Role::class => [

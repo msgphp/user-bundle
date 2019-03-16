@@ -10,7 +10,7 @@ use MsgPhp\Domain\Event\DomainEventHandlerTrait;
 use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
 use MsgPhp\User\CredentialInterface;
 use MsgPhp\User\Entity;
-use MsgPhp\User\Password\PasswordAlgorithm;
+use MsgPhp\User\Password\PasswordProtectedInterface;
 use MsgPhp\User\Role;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use SebastianBergmann\Diff\Differ;
@@ -301,12 +301,11 @@ final class UserMaker implements MakerInterface
         if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
             foreach (Configuration::getPackageMetadata()->findPaths('Entity/Credential') as $path) {
-                if ('.php' !== substr($path, -4) || !is_file($path)) {
+                if ('.php' !== substr($path, -4) || !is_file($path) || 'Anonymous' === $credential = basename($path, '.php')) {
                     continue;
                 }
-                if (!\in_array($credential = basename($path, '.php'), ['Anonymous', 'EmailSaltedPassword', 'NicknameSaltedPassword'], true)) {
-                    $credentials[] = $credential;
-                }
+
+                $credentials[] = $credential;
             }
             sort($credentials);
 
@@ -670,20 +669,16 @@ PHP;
 
     private function hasCredential(): bool
     {
-        return $this->credential && Entity\Credential\Anonymous::class !== $this->credential;
+        return null !== $this->credential && Entity\Credential\Anonymous::class !== $this->credential;
     }
 
     private function hasPassword(): bool
     {
-        return $this->hasCredential() && false !== strpos($this->credential, 'Password');
+        return null !== $this->credential && is_subclass_of($this->credential, PasswordProtectedInterface::class);
     }
 
     private function getPasswordHashAlgorithm(): string
     {
-        if ($this->hasCredential() && false !== strpos($this->credential, 'SaltedPassword')) {
-            return PasswordAlgorithm::DEFAULT_LEGACY;
-        }
-
         switch (\PASSWORD_DEFAULT) {
             case \defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2:
                 return 'argon2i';

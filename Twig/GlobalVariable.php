@@ -37,9 +37,7 @@ final class GlobalVariable
 
     public function getCurrentId(): UserIdInterface
     {
-        $token = $this->getTokenStorage()->getToken();
-
-        if (null === $token) {
+        if (null === $token = $this->getTokenStorage()->getToken()) {
             throw new \LogicException('User not authenticated.');
         }
 

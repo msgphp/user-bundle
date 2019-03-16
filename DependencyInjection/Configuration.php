@@ -261,9 +261,7 @@ final class Configuration implements ConfigurationInterface
             return ['class' => Entity\Credential\Anonymous::class, 'username_field' => null];
         }
 
-        $type = $reflection->getReturnType();
-
-        if (null === $type) {
+        if (null === $type = $reflection->getReturnType()) {
             throw new \LogicException(sprintf('Method "%s::getCredential()" must have a return type set.', $userClass));
         }
 

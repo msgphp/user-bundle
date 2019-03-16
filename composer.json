@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "msgphp/user": "^0.9",
+        "msgphp/user": "^0.10",
         "symfony/config": "^3.4 || ^4.0",
         "symfony/dependency-injection": "^3.4 || ^4.0",
         "symfony/http-kernel": "^3.4 || ^4.0"
@@ -45,7 +45,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.9-dev"
+            "dev-master": "0.10-dev"
         }
     },
     "autoload": {

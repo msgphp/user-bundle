@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\DomainIdInterface;
-use MsgPhp\Domain\Entity\Features;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
 use MsgPhp\Domain\Infra\Config\NodeBuilder;
 use MsgPhp\Domain\Infra\Config\TreeBuilderHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\PackageMetadata;
+use MsgPhp\Domain\Model;
 use MsgPhp\User\Command;
 use MsgPhp\User\CredentialInterface;
 use MsgPhp\User\Entity;
@@ -73,14 +73,14 @@ final class Configuration implements ConfigurationInterface
             Command\CreateUserCommand::class,
             Command\DeleteUserCommand::class,
 
-            Features\CanBeConfirmed::class => [
+            Model\CanBeConfirmed::class => [
                 Command\ConfirmUserCommand::class,
             ],
-            Features\CanBeEnabled::class => [
+            Model\CanBeEnabled::class => [
                 Command\DisableUserCommand::class,
                 Command\EnableUserCommand::class,
             ],
-            Entity\Features\ResettablePassword::class => [
+            \MsgPhp\User\Model\ResettablePassword::class => [
                 Command\RequestUserPasswordCommand::class,
             ],
         ],
@@ -93,7 +93,7 @@ final class Configuration implements ConfigurationInterface
             Command\AddUserEmailCommand::class,
             Command\DeleteUserEmailCommand::class,
 
-            Features\CanBeConfirmed::class => [
+            Model\CanBeConfirmed::class => [
                 Command\ConfirmUserEmailCommand::class,
             ],
         ],

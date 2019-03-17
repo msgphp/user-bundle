@@ -10,6 +10,7 @@ use MsgPhp\Domain\Event\DomainEventHandlerTrait;
 use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
 use MsgPhp\User\CredentialInterface;
 use MsgPhp\User\Entity;
+use MsgPhp\User\Model;
 use MsgPhp\User\Password\PasswordProtectedInterface;
 use MsgPhp\User\Role;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
@@ -367,9 +368,9 @@ PHP
             }
         }
 
-        $this->passwordReset = isset($traits[Entity\Features\ResettablePassword::class]);
+        $this->passwordReset = isset($traits[Model\ResettablePassword::class]);
         if (!$this->passwordReset && $this->hasPassword() && $io->confirm('Can users reset their password?')) {
-            $addUses[Entity\Features\ResettablePassword::class] = true;
+            $addUses[Model\ResettablePassword::class] = true;
             $addTraitUses['ResettablePassword'] = true;
             $enableEventHandler();
             $this->passwordReset = true;
@@ -380,7 +381,7 @@ PHP
             $baseDir = \dirname($this->user->getFileName());
             $vars = ['ns' => $ns = $this->user->getNamespaceName()];
 
-            $addUses[Entity\Fields\RolesField::class] = true;
+            $addUses[Model\RolesField::class] = true;
             $addTraitUses['RolesField'] = true;
 
             $this->writes[] = [$baseDir.'/Role.php', $this->mappingConfig->interpolate(self::getSkeleton('entity/Role.php', $vars))];

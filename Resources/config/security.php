@@ -16,7 +16,7 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->private()
 
-        ->set(Security\SecurityUserHashingFactory::class)
+        ->set(Security\HashingFactory::class)
             ->decorate('security.encoder_factory')
 
         ->set('.msgphp_user.security.password_hashing', PasswordEncoderInterface::class)

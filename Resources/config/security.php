@@ -7,9 +7,8 @@ use MsgPhp\User\Infra\Security;
 use MsgPhp\User\Password\PasswordHashingInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\inline;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
-use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface as SymfonyPasswordEncoderInterface;
+use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 
 return function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -17,12 +16,16 @@ return function (ContainerConfigurator $container): void {
             ->autowire()
             ->private()
 
+        ->set(Security\SecurityUserHashingFactory::class)
+            ->decorate('security.encoder_factory')
+
+        ->set('.msgphp_user.security.password_hashing', PasswordEncoderInterface::class)
+            ->factory([ref('security.encoder_factory'), 'getEncoder'])
+            ->args([Security\SecurityUser::class])
+        ->alias(PasswordEncoderInterface::class, '.msgphp_user.security.password_hashing')
+
         ->set(Security\PasswordHashing::class)
-            ->args([
-                inline(SymfonyPasswordEncoderInterface::class)
-                    ->factory([ref('security.encoder_factory'), 'getEncoder'])
-                    ->args([Security\SecurityUser::class]),
-            ])
+            ->arg('$hashing', ref('.msgphp_user.security.password_hashing'))
         ->alias(PasswordHashingInterface::class, Security\PasswordHashing::class)
 
         ->set(Security\SecurityUserProvider::class)

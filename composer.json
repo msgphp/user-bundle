@@ -19,24 +19,6 @@
         "symfony/dependency-injection": "^3.4 || ^4.0",
         "symfony/http-kernel": "^3.4 || ^4.0"
     },
-    "require-dev": {
-        "doctrine/doctrine-bundle": "^1.8",
-        "doctrine/orm": "^2.6",
-        "lexik/jwt-authentication-bundle": "^2.5",
-        "msgphp/eav-bundle": "^0.10",
-        "msgphp/user-eav": "^0.10",
-        "symfony/console": "^3.4 || ^4.0",
-        "symfony/form": "^3.4 || ^4.0",
-        "symfony/maker-bundle": "^1.5",
-        "symfony/messenger": "^4.2",
-        "symfony/security-bundle": "^3.4 || ^4.0",
-        "symfony/twig-bundle": "^3.4 || ^4.0",
-        "symfony/validator": "^3.4 || ^4.0"
-    },
-    "suggest": {
-        "msgphp/eav-bundle": "To enable user attribute values",
-        "msgphp/user-eav": "To enable user attribute values"
-    },
     "config": {
         "preferred-install": {
             "*": "dist"

@@ -9,12 +9,13 @@ use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\ExtensionHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\FeatureDetection;
 use MsgPhp\User\CredentialInterface;
-use MsgPhp\User\Entity;
 use MsgPhp\User\Infra\Console as ConsoleInfra;
 use MsgPhp\User\Infra\Doctrine as DoctrineInfra;
 use MsgPhp\User\Infra\Security as SecurityInfra;
 use MsgPhp\User\Repository;
 use MsgPhp\User\Role;
+use MsgPhp\User\User;
+use MsgPhp\User\UserRole;
 use MsgPhp\UserBundle\Twig;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
@@ -51,7 +52,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader = new PhpFileLoader($container, new FileLocator(\dirname(__DIR__).'/Resources/config'));
         $config = $this->processConfiguration($this->getConfiguration($configs, $container), $configs);
 
-        ExtensionHelper::configureDomain($container, $config['class_mapping'], Configuration::IDENTITY_MAPPING);
+        ExtensionHelper::configureDomain($container, $config['class_mapping']);
 
         // default infra
         $loader->load('services.php');
@@ -154,24 +155,24 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
             ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                 $container,
-                $config['class_mapping'][Entity\User::class]
+                $config['class_mapping'][User::class]
             ))
         ;
 
-        if (isset($config['class_mapping'][Entity\Role::class])) {
+        if (isset($config['class_mapping'][Role::class])) {
             $container->getDefinition(ConsoleInfra\Command\CreateRoleCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                     $container,
-                    $config['class_mapping'][Entity\Role::class]
+                    $config['class_mapping'][Role::class]
                 ))
             ;
         }
 
-        if (isset($config['class_mapping'][Entity\UserRole::class])) {
+        if (isset($config['class_mapping'][UserRole::class])) {
             $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                     $container,
-                    $config['class_mapping'][Entity\UserRole::class],
+                    $config['class_mapping'][UserRole::class],
                     ConsoleClassContextFactory::REUSE_DEFINITION
                 ))
             ;
@@ -192,7 +193,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
     private function configureRoleProvider(array $config, ContainerBuilder $container): void
     {
-        if (isset($config['class_mapping'][Entity\UserRole::class])) {
+        if (isset($config['class_mapping'][UserRole::class])) {
             $userProvider = $container->autowire(Role\UserRoleProvider::class);
             $userProvider->setPublic(false);
         }

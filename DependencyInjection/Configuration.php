@@ -10,15 +10,23 @@ use MsgPhp\Domain\Infra\Config\NodeBuilder;
 use MsgPhp\Domain\Infra\Config\TreeBuilderHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\PackageMetadata;
-use MsgPhp\Domain\Model;
+use MsgPhp\Domain\Model\CanBeConfirmed;
+use MsgPhp\Domain\Model\CanBeEnabled;
 use MsgPhp\User\Command;
+use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\CredentialInterface;
-use MsgPhp\User\Entity;
 use MsgPhp\User\Infra\Console as ConsoleInfra;
 use MsgPhp\User\Infra\Doctrine as DoctrineInfra;
 use MsgPhp\User\Infra\Uuid as UuidInfra;
+use MsgPhp\User\Model\ResettablePassword;
+use MsgPhp\User\Role;
 use MsgPhp\User\ScalarUserId;
+use MsgPhp\User\User;
+use MsgPhp\User\UserAttributeValue;
+use MsgPhp\User\UserEmail;
 use MsgPhp\User\UserIdInterface;
+use MsgPhp\User\Username;
+use MsgPhp\User\UserRole;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -30,24 +38,16 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 final class Configuration implements ConfigurationInterface
 {
     public const PACKAGE_NS = 'MsgPhp\\User\\';
-    public const IDENTITY_MAPPING = [
-        Entity\Role::class => ['name'],
-        Entity\UserAttributeValue::class => ['attributeValue'],
-        Entity\User::class => ['id'],
-        Entity\Username::class => ['username'],
-        Entity\UserRole::class => ['user', 'role'],
-        Entity\UserEmail::class => ['email'],
-    ];
     public const DOCTRINE_TYPE_MAPPING = [
         UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
     ];
     public const DOCTRINE_REPOSITORY_MAPPING = [
-        Entity\Role::class => DoctrineInfra\Repository\RoleRepository::class,
-        Entity\User::class => DoctrineInfra\Repository\UserRepository::class,
-        Entity\Username::class => DoctrineInfra\Repository\UsernameRepository::class,
-        Entity\UserAttributeValue::class => DoctrineInfra\Repository\UserAttributeValueRepository::class,
-        Entity\UserRole::class => DoctrineInfra\Repository\UserRoleRepository::class,
-        Entity\UserEmail::class => DoctrineInfra\Repository\UserEmailRepository::class,
+        Role::class => DoctrineInfra\Repository\RoleRepository::class,
+        User::class => DoctrineInfra\Repository\UserRepository::class,
+        Username::class => DoctrineInfra\Repository\UsernameRepository::class,
+        UserAttributeValue::class => DoctrineInfra\Repository\UserAttributeValueRepository::class,
+        UserRole::class => DoctrineInfra\Repository\UserRoleRepository::class,
+        UserEmail::class => DoctrineInfra\Repository\UserEmailRepository::class,
     ];
     public const CONSOLE_COMMAND_MAPPING = [
         Command\AddUserRoleCommand::class => [ConsoleInfra\Command\AddUserRoleCommand::class],
@@ -62,42 +62,45 @@ final class Configuration implements ConfigurationInterface
         Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
     ];
     private const ID_TYPE_MAPPING = [
-        UserIdInterface::class => ['scalar' => ScalarUserId::class, 'uuid' => UuidInfra\UserUuid::class],
+        UserIdInterface::class => [
+            'scalar' => ScalarUserId::class,
+            'uuid' => UuidInfra\UserUuid::class,
+        ],
     ];
     private const COMMAND_MAPPING = [
-        Entity\Role::class => [
+        Role::class => [
             Command\CreateRoleCommand::class,
             Command\DeleteRoleCommand::class,
         ],
-        Entity\User::class => [
+        User::class => [
             Command\CreateUserCommand::class,
             Command\DeleteUserCommand::class,
 
-            Model\CanBeConfirmed::class => [
+            CanBeConfirmed::class => [
                 Command\ConfirmUserCommand::class,
             ],
-            Model\CanBeEnabled::class => [
+            CanBeEnabled::class => [
                 Command\DisableUserCommand::class,
                 Command\EnableUserCommand::class,
             ],
-            \MsgPhp\User\Model\ResettablePassword::class => [
+            ResettablePassword::class => [
                 Command\RequestUserPasswordCommand::class,
             ],
         ],
-        Entity\UserAttributeValue::class => [
+        UserAttributeValue::class => [
             Command\AddUserAttributeValueCommand::class,
             Command\ChangeUserAttributeValueCommand::class,
             Command\DeleteUserAttributeValueCommand::class,
         ],
-        Entity\UserEmail::class => [
+        UserEmail::class => [
             Command\AddUserEmailCommand::class,
             Command\DeleteUserEmailCommand::class,
 
-            Model\CanBeConfirmed::class => [
+            CanBeConfirmed::class => [
                 Command\ConfirmUserEmailCommand::class,
             ],
         ],
-        Entity\UserRole::class => [
+        UserRole::class => [
             Command\AddUserRoleCommand::class,
             Command\DeleteUserRoleCommand::class,
         ],
@@ -119,8 +122,8 @@ final class Configuration implements ConfigurationInterface
             \dirname((string) (new \ReflectionClass(UserIdInterface::class))->getFileName()),
         ];
 
-        if (class_exists(Entity\UserAttributeValue::class)) {
-            $dirs[] = \dirname((string) (new \ReflectionClass(Entity\UserAttributeValue::class))->getFileName(), 2);
+        if (class_exists(UserAttributeValue::class)) {
+            $dirs[] = \dirname((string) (new \ReflectionClass(UserAttributeValue::class))->getFileName(), 2);
         }
 
         return self::$packageMetadata = new PackageMetadata(self::PACKAGE_NS, $dirs);
@@ -133,11 +136,11 @@ final class Configuration implements ConfigurationInterface
         /** @psalm-suppress PossiblyNullReference */
         $children
             ->classMappingNode('class_mapping')
-                ->requireClasses([Entity\User::class])
+                ->requireClasses([User::class])
                 ->disallowClasses([CredentialInterface::class])
-                ->groupClasses([Entity\Role::class, Entity\UserRole::class])
+                ->groupClasses([Role::class, UserRole::class])
                 ->subClassValues()
-                ->hint(Entity\UserAttributeValue::class, 'Try running "composer require msgphp/user-eav msgphp/eav-bundle".')
+                ->hint(UserAttributeValue::class, 'Try running "composer require msgphp/user-eav msgphp/eav-bundle".')
             ->end()
             ->classMappingNode('id_type_mapping')
                 ->subClassKeys([DomainIdInterface::class])
@@ -172,11 +175,11 @@ final class Configuration implements ConfigurationInterface
                         $result = [];
                         foreach ($value as $lookup) {
                             ['target' => $target, 'field' => $field, 'mapped_by' => $mappedBy] = $lookup;
-                            if (Entity\Username::class === $target || is_subclass_of($target, Entity\Username::class)) {
+                            if (Username::class === $target || is_subclass_of($target, Username::class)) {
                                 throw new \LogicException(sprintf('Lookup target "%s" is not applicable.', (string) $target));
                             }
-                            if (null === $mappedBy && !is_subclass_of($target, Entity\User::class)) {
-                                throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $target, Entity\User::class));
+                            if (null === $mappedBy && !is_subclass_of($target, User::class)) {
+                                throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $target, User::class));
                             }
 
                             $result[$target][$field] = $mappedBy;
@@ -229,14 +232,14 @@ final class Configuration implements ConfigurationInterface
         ->end()
         ->validate()
             ->always(function (array $config): array {
-                $userCredential = self::getUserCredential($userClass = $config['class_mapping'][Entity\User::class]);
+                $userCredential = self::getUserCredential($userClass = $config['class_mapping'][User::class]);
                 $config['username_field'] = $userCredential['username_field'];
                 $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
                 $config['commands'][Command\ChangeUserCredentialCommand::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandlerInterface::class) : false;
 
                 if ($config['username_lookup']) {
-                    if (!isset($config['class_mapping'][Entity\Username::class])) {
-                        throw new \LogicException(sprintf('Configuring "username_lookup" requires the "%s" entity to be mapped under "class_mapping".', Entity\Username::class));
+                    if (!isset($config['class_mapping'][Username::class])) {
+                        throw new \LogicException(sprintf('Configuring "username_lookup" requires the "%s" entity to be mapped under "class_mapping".', Username::class));
                     }
                     if (isset($config['username_field'])) {
                         $config['username_lookup'][$userClass][$config['username_field']] = null;
@@ -257,15 +260,15 @@ final class Configuration implements ConfigurationInterface
     {
         $reflection = new \ReflectionMethod($userClass, 'getCredential');
 
-        if (Entity\User::class === $reflection->getDeclaringClass()->getName()) {
-            return ['class' => Entity\Credential\Anonymous::class, 'username_field' => null];
+        if (User::class === $reflection->getDeclaringClass()->getName()) {
+            return ['class' => Anonymous::class, 'username_field' => null];
         }
 
         if (null === $type = $reflection->getReturnType()) {
             throw new \LogicException(sprintf('Method "%s::getCredential()" must have a return type set.', $userClass));
         }
 
-        if (Entity\Credential\Anonymous::class === $class = $type->getName()) {
+        if (Anonymous::class === $class = $type->getName()) {
             return ['class' => $class, 'username_field' => null];
         }
 

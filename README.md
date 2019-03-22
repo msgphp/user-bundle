@@ -16,7 +16,7 @@ composer require msgphp/user-bundle
 <?php
 // config/packages/msgphp_user.php
 
-use MsgPhp\User\Entity\User;
+use MsgPhp\User\User;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return function (ContainerConfigurator $container) {

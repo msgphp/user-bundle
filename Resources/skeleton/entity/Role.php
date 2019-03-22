@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace ${ns};
 
 use Doctrine\\ORM\\Mapping as ORM;
-use MsgPhp\\User\\Entity\\Role as BaseRole;
+use MsgPhp\\User\\Role as BaseRole;
 
 /**
  * @ORM\\Entity()

@@ -8,11 +8,14 @@ use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerTrait;
 use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
+use MsgPhp\User\Credential;
 use MsgPhp\User\CredentialInterface;
-use MsgPhp\User\Entity;
-use MsgPhp\User\Model;
+use MsgPhp\User\Model\ResettablePassword;
+use MsgPhp\User\Model\RolesField;
 use MsgPhp\User\Password\PasswordProtectedInterface;
 use MsgPhp\User\Role;
+use MsgPhp\User\User;
+use MsgPhp\User\UserRole;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use SebastianBergmann\Diff\Differ;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
@@ -84,7 +87,7 @@ final class UserMaker implements MakerInterface
         $this->configs = $this->services = $this->routes = $this->writes = [];
         $this->interactive = $input->isInteractive();
 
-        if (!isset($this->classMapping[Entity\User::class])) {
+        if (!isset($this->classMapping[User::class])) {
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
         }
 
@@ -111,7 +114,7 @@ final class UserMaker implements MakerInterface
             $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
         }
 
-        $this->user = new \ReflectionClass($this->classMapping[Entity\User::class]);
+        $this->user = new \ReflectionClass($this->classMapping[User::class]);
 
         $this->generateUser($io);
         $this->generateControllers($io);
@@ -301,7 +304,7 @@ final class UserMaker implements MakerInterface
 
         if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
-            foreach (Configuration::getPackageMetadata()->findPaths('Entity/Credential') as $path) {
+            foreach (Configuration::getPackageMetadata()->findPaths('Credential') as $path) {
                 if ('.php' !== substr($path, -4) || !is_file($path) || 'Anonymous' === $credential = basename($path, '.php')) {
                     continue;
                 }
@@ -311,8 +314,8 @@ final class UserMaker implements MakerInterface
             sort($credentials);
 
             $credential = $io->choice('Select credential type:', $credentials, 'EmailPassword');
-            $credentialClass = $this->credential = Configuration::PACKAGE_NS.'Entity\\Credential\\'.$credential;
-            $credentialTrait = Configuration::PACKAGE_NS.'Entity\\Features\\'.($credentialName = $credential.'Credential');
+            $credentialClass = $this->credential = Configuration::PACKAGE_NS.'Credential\\'.$credential;
+            $credentialTrait = Configuration::PACKAGE_NS.'Model\\'.($credentialName = $credential.'Credential');
             $credentialSignature = self::getConstructorSignature(new \ReflectionClass($credentialClass));
             $credentialInit = '$this->credential = new '.$credential.'('.self::getSignatureVariables($credentialSignature).');';
 
@@ -368,27 +371,27 @@ PHP
             }
         }
 
-        $this->passwordReset = isset($traits[Model\ResettablePassword::class]);
+        $this->passwordReset = isset($traits[ResettablePassword::class]);
         if (!$this->passwordReset && $this->hasPassword() && $io->confirm('Can users reset their password?')) {
-            $addUses[Model\ResettablePassword::class] = true;
+            $addUses[ResettablePassword::class] = true;
             $addTraitUses['ResettablePassword'] = true;
             $enableEventHandler();
             $this->passwordReset = true;
         }
 
         $roleProviders = [];
-        if (!isset($this->classMapping[Entity\Role::class]) && $io->confirm('Can users have assigned roles?')) {
+        if (!isset($this->classMapping[Role::class]) && $io->confirm('Can users have assigned roles?')) {
             $baseDir = \dirname($this->user->getFileName());
             $vars = ['ns' => $ns = $this->user->getNamespaceName()];
 
-            $addUses[Model\RolesField::class] = true;
+            $addUses[RolesField::class] = true;
             $addTraitUses['RolesField'] = true;
 
             $this->writes[] = [$baseDir.'/Role.php', $this->mappingConfig->interpolate(self::getSkeleton('entity/Role.php', $vars))];
             $this->writes[] = [$baseDir.'/UserRole.php', self::getSkeleton('entity/UserRole.php', $vars)];
             $this->configs[] = ['class_mapping' => [
-                Entity\Role::class => $ns.'\\Role',
-                Entity\UserRole::class => $userRoleClass = $ns.'\\UserRole',
+                Role::class => $ns.'\\Role',
+                UserRole::class => $userRoleClass = $ns.'\\UserRole',
             ]];
             $roleProviders[] = Role\UserRoleProvider::class;
         }
@@ -670,7 +673,7 @@ PHP;
 
     private function hasCredential(): bool
     {
-        return null !== $this->credential && Entity\Credential\Anonymous::class !== $this->credential;
+        return null !== $this->credential && Credential\Anonymous::class !== $this->credential;
     }
 
     private function hasPassword(): bool

@@ -8,11 +8,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerTrait;
 use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
-use MsgPhp\User\Credential;
-use MsgPhp\User\CredentialInterface;
+use MsgPhp\User\Credential\Anonymous;
+use MsgPhp\User\Credential\CredentialInterface;
+use MsgPhp\User\Credential\PasswordProtectedCredentialInterface;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Model\RolesField;
-use MsgPhp\User\Password\PasswordProtectedInterface;
 use MsgPhp\User\Role;
 use MsgPhp\User\User;
 use MsgPhp\User\UserRole;
@@ -673,12 +673,12 @@ PHP;
 
     private function hasCredential(): bool
     {
-        return null !== $this->credential && Credential\Anonymous::class !== $this->credential;
+        return null !== $this->credential && Anonymous::class !== $this->credential;
     }
 
     private function hasPassword(): bool
     {
-        return null !== $this->credential && is_subclass_of($this->credential, PasswordProtectedInterface::class);
+        return null !== $this->credential && is_subclass_of($this->credential, PasswordProtectedCredentialInterface::class);
     }
 
     private function getPasswordHashAlgorithm(): string

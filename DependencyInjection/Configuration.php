@@ -14,7 +14,7 @@ use MsgPhp\Domain\Model\CanBeConfirmed;
 use MsgPhp\Domain\Model\CanBeEnabled;
 use MsgPhp\User\Command;
 use MsgPhp\User\Credential\Anonymous;
-use MsgPhp\User\CredentialInterface;
+use MsgPhp\User\Credential\CredentialInterface;
 use MsgPhp\User\Infra\Console as ConsoleInfra;
 use MsgPhp\User\Infra\Doctrine as DoctrineInfra;
 use MsgPhp\User\Infra\Uuid as UuidInfra;

@@ -8,7 +8,7 @@ use MsgPhp\Domain\Infra\Console\Context\ClassContextFactory as ConsoleClassConte
 use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\ExtensionHelper;
 use MsgPhp\Domain\Infra\DependencyInjection\FeatureDetection;
-use MsgPhp\User\CredentialInterface;
+use MsgPhp\User\Credential\CredentialInterface;
 use MsgPhp\User\Infra\Console as ConsoleInfra;
 use MsgPhp\User\Infra\Doctrine as DoctrineInfra;
 use MsgPhp\User\Infra\Security as SecurityInfra;

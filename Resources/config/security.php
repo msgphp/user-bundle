@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\PayloadAwareUserProviderInterface;
 use MsgPhp\User\Infrastructure\Security;
-use MsgPhp\User\Password\PasswordHashingInterface;
+use MsgPhp\User\Password\PasswordHashing;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
@@ -26,7 +26,7 @@ return function (ContainerConfigurator $container): void {
 
         ->set(Security\PasswordHashing::class)
             ->arg('$hashing', ref('.msgphp_user.security.password_hashing'))
-        ->alias(PasswordHashingInterface::class, Security\PasswordHashing::class)
+        ->alias(PasswordHashing::class, Security\PasswordHashing::class)
 
         ->set(Security\SecurityUserProvider::class)
         ->set(Security\UserArgumentValueResolver::class)

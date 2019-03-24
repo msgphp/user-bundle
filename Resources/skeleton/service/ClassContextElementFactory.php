@@ -5,7 +5,7 @@ declare(strict_types=1);
 $uses = [
     'use '.$userClass.';',
     'use '.$credentialClass.';',
-    'use MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactoryInterface;',
+    'use MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactory as BaseClassContextElementFactory;',
     'use MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ContextElement;',
 ];
 $cases = [];
@@ -20,12 +20,12 @@ PHP;
 
 $constructor = '{';
 if (false !== strpos($credentialClass, 'Password')) {
-    $uses[] = 'use MsgPhp\User\Password\PasswordHashingInterface;';
+    $uses[] = 'use MsgPhp\User\Password\PasswordHashing;';
     $constructor = <<<'PHP'
 {
     private $passwordHashing;
 
-    public function __construct(PasswordHashingInterface $passwordHashing)
+    public function __construct(PasswordHashing $passwordHashing)
     {
         $this->passwordHashing = $passwordHashing;
     }
@@ -65,7 +65,7 @@ namespace ${ns};
 
 ${uses}
 
-final class ${class} implements ClassContextElementFactoryInterface
+final class ${class} implements BaseClassContextElementFactory
 ${constructor}
     public function getElement(string \$class, string \$method, string \$argument): ContextElement
     {

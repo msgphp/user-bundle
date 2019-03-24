@@ -8,7 +8,7 @@ use MsgPhp\Domain\Infrastructure\Console\Context\ClassContextFactory as ConsoleC
 use MsgPhp\Domain\Infrastructure\DependencyInjection\ContainerHelper;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\ExtensionHelper;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
-use MsgPhp\User\Credential\CredentialInterface;
+use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
 use MsgPhp\User\Infrastructure\Security as SecurityInfrastructure;
@@ -118,7 +118,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if (FeatureDetection::hasSecurityBundle($container) && $container->hasDefinition($id = 'data_collector.security')) {
             $container->getDefinition($id)
                 ->setClass(SecurityInfrastructure\DataCollector::class)
-                ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
+                ->setArgument('$repository', new Reference(Repository\UserRepository::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
             ;
         }
     }
@@ -182,7 +182,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             $container->getDefinition(ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                     $container,
-                    $config['class_mapping'][CredentialInterface::class],
+                    $config['class_mapping'][Credential::class],
                     ConsoleClassContextFactory::ALWAYS_OPTIONAL | ConsoleClassContextFactory::NO_DEFAULTS
                 ))
             ;

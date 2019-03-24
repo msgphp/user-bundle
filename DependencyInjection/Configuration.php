@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use MsgPhp\Domain\DomainIdInterface;
-use MsgPhp\Domain\Event\DomainEventHandlerInterface;
+use MsgPhp\Domain\DomainId;
+use MsgPhp\Domain\Event\DomainEventHandler;
 use MsgPhp\Domain\Infrastructure\Config\NodeBuilder;
 use MsgPhp\Domain\Infrastructure\Config\TreeBuilderHelper;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\ConfigHelper;
@@ -14,7 +14,7 @@ use MsgPhp\Domain\Model\CanBeConfirmed;
 use MsgPhp\Domain\Model\CanBeEnabled;
 use MsgPhp\User\Command;
 use MsgPhp\User\Credential\Anonymous;
-use MsgPhp\User\Credential\CredentialInterface;
+use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
 use MsgPhp\User\Infrastructure\Uuid as UuidInfrastructure;
@@ -24,7 +24,7 @@ use MsgPhp\User\ScalarUserId;
 use MsgPhp\User\User;
 use MsgPhp\User\UserAttributeValue;
 use MsgPhp\User\UserEmail;
-use MsgPhp\User\UserIdInterface;
+use MsgPhp\User\UserId;
 use MsgPhp\User\Username;
 use MsgPhp\User\UserRole;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -39,7 +39,7 @@ final class Configuration implements ConfigurationInterface
 {
     public const PACKAGE_NS = 'MsgPhp\\User\\';
     public const DOCTRINE_TYPE_MAPPING = [
-        UserIdInterface::class => DoctrineInfrastructure\Type\UserIdType::class,
+        UserId::class => DoctrineInfrastructure\Type\UserIdType::class,
     ];
     public const DOCTRINE_REPOSITORY_MAPPING = [
         Role::class => DoctrineInfrastructure\Repository\RoleRepository::class,
@@ -50,59 +50,59 @@ final class Configuration implements ConfigurationInterface
         UserEmail::class => DoctrineInfrastructure\Repository\UserEmailRepository::class,
     ];
     public const CONSOLE_COMMAND_MAPPING = [
-        Command\AddUserRoleCommand::class => [ConsoleInfrastructure\Command\AddUserRoleCommand::class],
-        Command\ChangeUserCredentialCommand::class => [ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class],
-        Command\ConfirmUserCommand::class => [ConsoleInfrastructure\Command\ConfirmUserCommand::class],
-        Command\CreateRoleCommand::class => [ConsoleInfrastructure\Command\CreateRoleCommand::class],
-        Command\CreateUserCommand::class => [ConsoleInfrastructure\Command\CreateUserCommand::class],
-        Command\DeleteRoleCommand::class => [ConsoleInfrastructure\Command\DeleteRoleCommand::class],
-        Command\DeleteUserCommand::class => [ConsoleInfrastructure\Command\DeleteUserCommand::class],
-        Command\DeleteUserRoleCommand::class => [ConsoleInfrastructure\Command\DeleteUserRoleCommand::class],
-        Command\DisableUserCommand::class => [ConsoleInfrastructure\Command\DisableUserCommand::class],
-        Command\EnableUserCommand::class => [ConsoleInfrastructure\Command\EnableUserCommand::class],
+        Command\AddUserRole::class => [ConsoleInfrastructure\Command\AddUserRoleCommand::class],
+        Command\ChangeUserCredential::class => [ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class],
+        Command\ConfirmUser::class => [ConsoleInfrastructure\Command\ConfirmUserCommand::class],
+        Command\CreateRole::class => [ConsoleInfrastructure\Command\CreateRoleCommand::class],
+        Command\CreateUser::class => [ConsoleInfrastructure\Command\CreateUserCommand::class],
+        Command\DeleteRole::class => [ConsoleInfrastructure\Command\DeleteRoleCommand::class],
+        Command\DeleteUser::class => [ConsoleInfrastructure\Command\DeleteUserCommand::class],
+        Command\DeleteUserRole::class => [ConsoleInfrastructure\Command\DeleteUserRoleCommand::class],
+        Command\DisableUser::class => [ConsoleInfrastructure\Command\DisableUserCommand::class],
+        Command\EnableUser::class => [ConsoleInfrastructure\Command\EnableUserCommand::class],
     ];
     private const ID_TYPE_MAPPING = [
-        UserIdInterface::class => [
+        UserId::class => [
             'scalar' => ScalarUserId::class,
             'uuid' => UuidInfrastructure\UserUuid::class,
         ],
     ];
     private const COMMAND_MAPPING = [
         Role::class => [
-            Command\CreateRoleCommand::class,
-            Command\DeleteRoleCommand::class,
+            Command\CreateRole::class,
+            Command\DeleteRole::class,
         ],
         User::class => [
-            Command\CreateUserCommand::class,
-            Command\DeleteUserCommand::class,
+            Command\CreateUser::class,
+            Command\DeleteUser::class,
 
             CanBeConfirmed::class => [
-                Command\ConfirmUserCommand::class,
+                Command\ConfirmUser::class,
             ],
             CanBeEnabled::class => [
-                Command\DisableUserCommand::class,
-                Command\EnableUserCommand::class,
+                Command\DisableUser::class,
+                Command\EnableUser::class,
             ],
             ResettablePassword::class => [
-                Command\RequestUserPasswordCommand::class,
+                Command\RequestUserPassword::class,
             ],
         ],
         UserAttributeValue::class => [
-            Command\AddUserAttributeValueCommand::class,
-            Command\ChangeUserAttributeValueCommand::class,
-            Command\DeleteUserAttributeValueCommand::class,
+            Command\AddUserAttributeValue::class,
+            Command\ChangeUserAttributeValue::class,
+            Command\DeleteUserAttributeValue::class,
         ],
         UserEmail::class => [
-            Command\AddUserEmailCommand::class,
-            Command\DeleteUserEmailCommand::class,
+            Command\AddUserEmail::class,
+            Command\DeleteUserEmail::class,
 
             CanBeConfirmed::class => [
-                Command\ConfirmUserEmailCommand::class,
+                Command\ConfirmUserEmail::class,
             ],
         ],
         UserRole::class => [
-            Command\AddUserRoleCommand::class,
-            Command\DeleteUserRoleCommand::class,
+            Command\AddUserRole::class,
+            Command\DeleteUserRole::class,
         ],
     ];
     private const DEFAULT_ROLE = 'ROLE_USER';
@@ -119,7 +119,7 @@ final class Configuration implements ConfigurationInterface
         }
 
         $dirs = [
-            \dirname((string) (new \ReflectionClass(UserIdInterface::class))->getFileName()),
+            \dirname((string) (new \ReflectionClass(UserId::class))->getFileName()),
         ];
 
         if (class_exists(UserAttributeValue::class)) {
@@ -137,13 +137,13 @@ final class Configuration implements ConfigurationInterface
         $children
             ->classMappingNode('class_mapping')
                 ->requireClasses([User::class])
-                ->disallowClasses([CredentialInterface::class])
+                ->disallowClasses([Credential::class])
                 ->groupClasses([Role::class, UserRole::class])
                 ->subClassValues()
                 ->hint(UserAttributeValue::class, 'Try running "composer require msgphp/user-eav msgphp/eav-bundle".')
             ->end()
             ->classMappingNode('id_type_mapping')
-                ->subClassKeys([DomainIdInterface::class])
+                ->subClassKeys([DomainId::class])
             ->end()
             ->classMappingNode('commands')
                 ->typeOfValues('boolean')
@@ -234,8 +234,8 @@ final class Configuration implements ConfigurationInterface
             ->always(function (array $config): array {
                 $userCredential = self::getUserCredential($userClass = $config['class_mapping'][User::class]);
                 $config['username_field'] = $userCredential['username_field'];
-                $config['class_mapping'][CredentialInterface::class] = $userCredential['class'];
-                $config['commands'][Command\ChangeUserCredentialCommand::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandlerInterface::class) : false;
+                $config['class_mapping'][Credential::class] = $userCredential['class'];
+                $config['commands'][Command\ChangeUserCredential::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandler::class) : false;
 
                 if ($config['username_lookup']) {
                     if (!isset($config['class_mapping'][Username::class])) {
@@ -272,8 +272,8 @@ final class Configuration implements ConfigurationInterface
             return ['class' => $class, 'username_field' => null];
         }
 
-        if ($type->isBuiltin() || !is_subclass_of($class, CredentialInterface::class)) {
-            throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $userClass, CredentialInterface::class, $class));
+        if ($type->isBuiltin() || !is_subclass_of($class, Credential::class)) {
+            throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $userClass, Credential::class, $class));
         }
 
         if ($type->allowsNull()) {

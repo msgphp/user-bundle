@@ -23,7 +23,7 @@ final class CleanupPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        ContainerHelper::removeIf($container, !$container->has(Repository\RoleRepositoryInterface::class), [
+        ContainerHelper::removeIf($container, !$container->has(Repository\RoleRepository::class), [
             Command\Handler\CreateRoleHandler::class,
             Command\Handler\DeleteRoleHandler::class,
             ConsoleInfrastructure\Command\AddUserRoleCommand::class,
@@ -31,7 +31,7 @@ final class CleanupPass implements CompilerPassInterface
             ConsoleInfrastructure\Command\DeleteRoleCommand::class,
             ConsoleInfrastructure\Command\DeleteUserRoleCommand::class,
         ]);
-        ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserRepository::class), [
             Command\Handler\ChangeUserCredentialHandler::class,
             Command\Handler\ConfirmUserHandler::class,
             Command\Handler\CreateUserHandler::class,
@@ -54,19 +54,19 @@ final class CleanupPass implements CompilerPassInterface
             ValidatorInfrastructure\ExistingUsernameValidator::class,
             ValidatorInfrastructure\UniqueUsernameValidator::class,
         ]);
-        ContainerHelper::removeIf($container, !$container->has(Repository\UsernameRepositoryInterface::class), [
+        ContainerHelper::removeIf($container, !$container->has(Repository\UsernameRepository::class), [
             ConsoleInfrastructure\Command\SynchronizeUsernamesCommand::class,
         ]);
-        ContainerHelper::removeIf($container, !$container->has(Repository\UserAttributeValueRepositoryInterface::class), [
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserAttributeValueRepository::class), [
             Command\Handler\AddUserAttributeValueHandler::class,
             Command\Handler\ChangeUserAttributeValueHandler::class,
             Command\Handler\DeleteUserAttributeValueHandler::class,
         ]);
-        ContainerHelper::removeIf($container, !$container->has(Repository\UserEmailRepositoryInterface::class), [
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserEmailRepository::class), [
             Command\Handler\AddUserEmailHandler::class,
             Command\Handler\DeleteUserEmailHandler::class,
         ]);
-        ContainerHelper::removeIf($container, !$container->has(Repository\UserRoleRepositoryInterface::class), [
+        ContainerHelper::removeIf($container, !$container->has(Repository\UserRoleRepository::class), [
             Command\Handler\AddUserRoleHandler::class,
             Command\Handler\DeleteUserRoleHandler::class,
             ConsoleInfrastructure\Command\AddUserRoleCommand::class,

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\Twig;
 
 use MsgPhp\User\Infrastructure\Security\SecurityUser;
-use MsgPhp\User\Repository\UserRepositoryInterface;
+use MsgPhp\User\Repository\UserRepository;
 use MsgPhp\User\User;
-use MsgPhp\User\UserIdInterface;
+use MsgPhp\User\UserId;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
@@ -35,7 +35,7 @@ final class GlobalVariable
         return $this->getUserRepository()->find($this->getCurrentId());
     }
 
-    public function getCurrentId(): UserIdInterface
+    public function getCurrentId(): UserId
     {
         if (null === $token = $this->getTokenStorage()->getToken()) {
             throw new \LogicException('User not authenticated.');
@@ -64,12 +64,12 @@ final class GlobalVariable
         return $this->container->get(TokenStorageInterface::class);
     }
 
-    private function getUserRepository(): UserRepositoryInterface
+    private function getUserRepository(): UserRepository
     {
-        if (!$this->container->has(UserRepositoryInterface::class)) {
+        if (!$this->container->has(UserRepository::class)) {
             throw new \LogicException('User repository not available.');
         }
 
-        return $this->container->get(UserRepositoryInterface::class);
+        return $this->container->get(UserRepository::class);
     }
 }

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\Maker;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MsgPhp\Domain\Event\DomainEventHandlerInterface;
+use MsgPhp\Domain\Event\DomainEventHandler;
 use MsgPhp\Domain\Event\DomainEventHandlerTrait;
 use MsgPhp\Domain\Infrastructure\Doctrine\MappingConfig;
 use MsgPhp\User\Credential\Anonymous;
-use MsgPhp\User\Credential\CredentialInterface;
-use MsgPhp\User\Credential\PasswordProtectedCredentialInterface;
+use MsgPhp\User\Credential\Credential;
+use MsgPhp\User\Credential\PasswordProtectedCredential;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Model\RolesField;
 use MsgPhp\User\Role;
@@ -292,15 +292,15 @@ final class UserMaker implements MakerInterface
         $addUses = $addTraitUses = $addImplementors = [];
         $write = false;
         $enableEventHandler = function () use ($implementors, &$addUses, &$addImplementors, &$addTraitUses): void {
-            if (!isset($implementors[DomainEventHandlerInterface::class])) {
-                $addUses[DomainEventHandlerInterface::class] = true;
+            if (!isset($implementors[DomainEventHandler::class])) {
+                $addUses[DomainEventHandler::class] = true;
                 $addUses[DomainEventHandlerTrait::class] = true;
                 $addImplementors['DomainEventHandlerInterface'] = true;
                 $addTraitUses['DomainEventHandlerTrait'] = true;
             }
         };
 
-        $this->credential = $this->classMapping[CredentialInterface::class] ?? null;
+        $this->credential = $this->classMapping[Credential::class] ?? null;
 
         if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
@@ -608,7 +608,7 @@ PHP;
         ])];
         $this->services[] = <<<PHP
 ->set(${contextElementFactoryClass}::class)
-->alias(MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactoryInterface::class, ${contextElementFactoryClass}::class)
+->alias(MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactory::class, ${contextElementFactoryClass}::class)
 PHP;
     }
 
@@ -678,7 +678,7 @@ PHP;
 
     private function hasPassword(): bool
     {
-        return null !== $this->credential && is_subclass_of($this->credential, PasswordProtectedCredentialInterface::class);
+        return null !== $this->credential && is_subclass_of($this->credential, PasswordProtectedCredential::class);
     }
 
     private function getPasswordHashAlgorithm(): string

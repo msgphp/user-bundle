@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use MsgPhp\User\Repository\UserRepositoryInterface;
+use MsgPhp\User\Repository\UserRepository;
 use MsgPhp\UserBundle\Twig;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline;
@@ -20,7 +20,7 @@ return function (ContainerConfigurator $container): void {
                 inline(ServiceLocator::class)
                     ->args([[
                         TokenStorageInterface::class => ref(TokenStorageInterface::class)->nullOnInvalid(),
-                        UserRepositoryInterface::class => ref(UserRepositoryInterface::class)->nullOnInvalid(),
+                        UserRepository::class => ref(UserRepository::class)->nullOnInvalid(),
                     ]])
                     ->tag('container.service_locator'),
             ])

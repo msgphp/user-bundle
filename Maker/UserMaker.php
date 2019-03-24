@@ -305,7 +305,7 @@ final class UserMaker implements MakerInterface
         if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
             $credentials = [];
             foreach (Configuration::getPackageMetadata()->findPaths('Credential') as $path) {
-                if ('.php' !== substr($path, -4) || !is_file($path) || 'Anonymous' === $credential = basename($path, '.php')) {
+                if ('.php' !== substr($path, -4) || !is_file($path) || Anonymous::class === ($credentialClass = Configuration::PACKAGE_NS.'Credential\\'.($credential = basename($path, '.php'))) || !is_subclass_of($credentialClass, Credential::class) || !class_exists($credentialClass, false)) {
                     continue;
                 }
 

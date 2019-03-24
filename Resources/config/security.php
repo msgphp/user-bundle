@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\PayloadAwareUserProviderInterface;
-use MsgPhp\User\Infra\Security;
+use MsgPhp\User\Infrastructure\Security;
 use MsgPhp\User\Password\PasswordHashingInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

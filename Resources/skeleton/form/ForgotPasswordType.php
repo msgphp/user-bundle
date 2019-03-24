@@ -5,7 +5,7 @@ declare(strict_types=1);
 $fieldType = 'email' === $fieldName ? 'EmailType' : 'TextType';
 $validators = ['new NotBlank()', 'new '.($existingValidator = 'Existing'.ucfirst($fieldName)).'()'];
 $uses = [
-    'use MsgPhp\\User\\Infra\\Validator\\ExistingUsername as '.$existingValidator.';',
+    'use MsgPhp\\User\\Infrastructure\\Validator\\ExistingUsername as '.$existingValidator.';',
     'use Symfony\\Component\\Form\\AbstractType;',
     'use Symfony\\Component\\Form\\Extension\\Core\\Type\\'.$fieldType.';',
     'use Symfony\\Component\\Form\\FormBuilderInterface;',

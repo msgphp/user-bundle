@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection\Compiler;
 
-use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\ContainerHelper;
 use MsgPhp\User\Command;
-use MsgPhp\User\Infra\Console as ConsoleInfra;
-use MsgPhp\User\Infra\Security as SecurityInfra;
-use MsgPhp\User\Infra\Validator as ValidatorInfra;
+use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
+use MsgPhp\User\Infrastructure\Security as SecurityInfrastructure;
+use MsgPhp\User\Infrastructure\Validator as ValidatorInfrastructure;
 use MsgPhp\User\Repository;
 use MsgPhp\User\Role;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -26,10 +26,10 @@ final class CleanupPass implements CompilerPassInterface
         ContainerHelper::removeIf($container, !$container->has(Repository\RoleRepositoryInterface::class), [
             Command\Handler\CreateRoleHandler::class,
             Command\Handler\DeleteRoleHandler::class,
-            ConsoleInfra\Command\AddUserRoleCommand::class,
-            ConsoleInfra\Command\CreateRoleCommand::class,
-            ConsoleInfra\Command\DeleteRoleCommand::class,
-            ConsoleInfra\Command\DeleteUserRoleCommand::class,
+            ConsoleInfrastructure\Command\AddUserRoleCommand::class,
+            ConsoleInfrastructure\Command\CreateRoleCommand::class,
+            ConsoleInfrastructure\Command\DeleteRoleCommand::class,
+            ConsoleInfrastructure\Command\DeleteUserRoleCommand::class,
         ]);
         ContainerHelper::removeIf($container, !$container->has(Repository\UserRepositoryInterface::class), [
             Command\Handler\ChangeUserCredentialHandler::class,
@@ -39,23 +39,23 @@ final class CleanupPass implements CompilerPassInterface
             Command\Handler\DisableUserHandler::class,
             Command\Handler\EnableUserHandler::class,
             Command\Handler\RequestUserPasswordHandler::class,
-            ConsoleInfra\Command\AddUserRoleCommand::class,
-            ConsoleInfra\Command\ChangeUserCredentialCommand::class,
-            ConsoleInfra\Command\ConfirmUserCommand::class,
-            ConsoleInfra\Command\CreateUserCommand::class,
-            ConsoleInfra\Command\DeleteUserCommand::class,
-            ConsoleInfra\Command\DeleteUserRoleCommand::class,
-            ConsoleInfra\Command\DisableUserCommand::class,
-            ConsoleInfra\Command\EnableUserCommand::class,
-            SecurityInfra\Jwt\SecurityUserProvider::class,
-            SecurityInfra\SecurityUserProvider::class,
-            SecurityInfra\UserParamConverter::class,
-            SecurityInfra\UserArgumentValueResolver::class,
-            ValidatorInfra\ExistingUsernameValidator::class,
-            ValidatorInfra\UniqueUsernameValidator::class,
+            ConsoleInfrastructure\Command\AddUserRoleCommand::class,
+            ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class,
+            ConsoleInfrastructure\Command\ConfirmUserCommand::class,
+            ConsoleInfrastructure\Command\CreateUserCommand::class,
+            ConsoleInfrastructure\Command\DeleteUserCommand::class,
+            ConsoleInfrastructure\Command\DeleteUserRoleCommand::class,
+            ConsoleInfrastructure\Command\DisableUserCommand::class,
+            ConsoleInfrastructure\Command\EnableUserCommand::class,
+            SecurityInfrastructure\Jwt\SecurityUserProvider::class,
+            SecurityInfrastructure\SecurityUserProvider::class,
+            SecurityInfrastructure\UserParamConverter::class,
+            SecurityInfrastructure\UserArgumentValueResolver::class,
+            ValidatorInfrastructure\ExistingUsernameValidator::class,
+            ValidatorInfrastructure\UniqueUsernameValidator::class,
         ]);
         ContainerHelper::removeIf($container, !$container->has(Repository\UsernameRepositoryInterface::class), [
-            ConsoleInfra\Command\SynchronizeUsernamesCommand::class,
+            ConsoleInfrastructure\Command\SynchronizeUsernamesCommand::class,
         ]);
         ContainerHelper::removeIf($container, !$container->has(Repository\UserAttributeValueRepositoryInterface::class), [
             Command\Handler\AddUserAttributeValueHandler::class,
@@ -69,8 +69,8 @@ final class CleanupPass implements CompilerPassInterface
         ContainerHelper::removeIf($container, !$container->has(Repository\UserRoleRepositoryInterface::class), [
             Command\Handler\AddUserRoleHandler::class,
             Command\Handler\DeleteUserRoleHandler::class,
-            ConsoleInfra\Command\AddUserRoleCommand::class,
-            ConsoleInfra\Command\DeleteUserRoleCommand::class,
+            ConsoleInfrastructure\Command\AddUserRoleCommand::class,
+            ConsoleInfrastructure\Command\DeleteUserRoleCommand::class,
             Role\UserRoleProvider::class,
         ]);
     }

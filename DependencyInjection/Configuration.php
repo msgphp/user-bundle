@@ -6,18 +6,18 @@ namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\DomainIdInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
-use MsgPhp\Domain\Infra\Config\NodeBuilder;
-use MsgPhp\Domain\Infra\Config\TreeBuilderHelper;
-use MsgPhp\Domain\Infra\DependencyInjection\ConfigHelper;
-use MsgPhp\Domain\Infra\DependencyInjection\PackageMetadata;
+use MsgPhp\Domain\Infrastructure\Config\NodeBuilder;
+use MsgPhp\Domain\Infrastructure\Config\TreeBuilderHelper;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\ConfigHelper;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\PackageMetadata;
 use MsgPhp\Domain\Model\CanBeConfirmed;
 use MsgPhp\Domain\Model\CanBeEnabled;
 use MsgPhp\User\Command;
 use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\Credential\CredentialInterface;
-use MsgPhp\User\Infra\Console as ConsoleInfra;
-use MsgPhp\User\Infra\Doctrine as DoctrineInfra;
-use MsgPhp\User\Infra\Uuid as UuidInfra;
+use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
+use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
+use MsgPhp\User\Infrastructure\Uuid as UuidInfrastructure;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Role;
 use MsgPhp\User\ScalarUserId;
@@ -39,32 +39,32 @@ final class Configuration implements ConfigurationInterface
 {
     public const PACKAGE_NS = 'MsgPhp\\User\\';
     public const DOCTRINE_TYPE_MAPPING = [
-        UserIdInterface::class => DoctrineInfra\Type\UserIdType::class,
+        UserIdInterface::class => DoctrineInfrastructure\Type\UserIdType::class,
     ];
     public const DOCTRINE_REPOSITORY_MAPPING = [
-        Role::class => DoctrineInfra\Repository\RoleRepository::class,
-        User::class => DoctrineInfra\Repository\UserRepository::class,
-        Username::class => DoctrineInfra\Repository\UsernameRepository::class,
-        UserAttributeValue::class => DoctrineInfra\Repository\UserAttributeValueRepository::class,
-        UserRole::class => DoctrineInfra\Repository\UserRoleRepository::class,
-        UserEmail::class => DoctrineInfra\Repository\UserEmailRepository::class,
+        Role::class => DoctrineInfrastructure\Repository\RoleRepository::class,
+        User::class => DoctrineInfrastructure\Repository\UserRepository::class,
+        Username::class => DoctrineInfrastructure\Repository\UsernameRepository::class,
+        UserAttributeValue::class => DoctrineInfrastructure\Repository\UserAttributeValueRepository::class,
+        UserRole::class => DoctrineInfrastructure\Repository\UserRoleRepository::class,
+        UserEmail::class => DoctrineInfrastructure\Repository\UserEmailRepository::class,
     ];
     public const CONSOLE_COMMAND_MAPPING = [
-        Command\AddUserRoleCommand::class => [ConsoleInfra\Command\AddUserRoleCommand::class],
-        Command\ChangeUserCredentialCommand::class => [ConsoleInfra\Command\ChangeUserCredentialCommand::class],
-        Command\ConfirmUserCommand::class => [ConsoleInfra\Command\ConfirmUserCommand::class],
-        Command\CreateRoleCommand::class => [ConsoleInfra\Command\CreateRoleCommand::class],
-        Command\CreateUserCommand::class => [ConsoleInfra\Command\CreateUserCommand::class],
-        Command\DeleteRoleCommand::class => [ConsoleInfra\Command\DeleteRoleCommand::class],
-        Command\DeleteUserCommand::class => [ConsoleInfra\Command\DeleteUserCommand::class],
-        Command\DeleteUserRoleCommand::class => [ConsoleInfra\Command\DeleteUserRoleCommand::class],
-        Command\DisableUserCommand::class => [ConsoleInfra\Command\DisableUserCommand::class],
-        Command\EnableUserCommand::class => [ConsoleInfra\Command\EnableUserCommand::class],
+        Command\AddUserRoleCommand::class => [ConsoleInfrastructure\Command\AddUserRoleCommand::class],
+        Command\ChangeUserCredentialCommand::class => [ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class],
+        Command\ConfirmUserCommand::class => [ConsoleInfrastructure\Command\ConfirmUserCommand::class],
+        Command\CreateRoleCommand::class => [ConsoleInfrastructure\Command\CreateRoleCommand::class],
+        Command\CreateUserCommand::class => [ConsoleInfrastructure\Command\CreateUserCommand::class],
+        Command\DeleteRoleCommand::class => [ConsoleInfrastructure\Command\DeleteRoleCommand::class],
+        Command\DeleteUserCommand::class => [ConsoleInfrastructure\Command\DeleteUserCommand::class],
+        Command\DeleteUserRoleCommand::class => [ConsoleInfrastructure\Command\DeleteUserRoleCommand::class],
+        Command\DisableUserCommand::class => [ConsoleInfrastructure\Command\DisableUserCommand::class],
+        Command\EnableUserCommand::class => [ConsoleInfrastructure\Command\EnableUserCommand::class],
     ];
     private const ID_TYPE_MAPPING = [
         UserIdInterface::class => [
             'scalar' => ScalarUserId::class,
-            'uuid' => UuidInfra\UserUuid::class,
+            'uuid' => UuidInfrastructure\UserUuid::class,
         ],
     ];
     private const COMMAND_MAPPING = [

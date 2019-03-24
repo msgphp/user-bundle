@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events as DoctrineOrmEvents;
-use MsgPhp\User\Infra\Doctrine;
+use MsgPhp\User\Infrastructure\Doctrine;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;

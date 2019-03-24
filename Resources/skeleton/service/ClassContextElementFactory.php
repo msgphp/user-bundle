@@ -5,8 +5,8 @@ declare(strict_types=1);
 $uses = [
     'use '.$userClass.';',
     'use '.$credentialClass.';',
-    'use MsgPhp\\Domain\\Infra\\Console\\Context\\ClassContextElementFactoryInterface;',
-    'use MsgPhp\\Domain\\Infra\\Console\\Context\\ContextElement;',
+    'use MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactoryInterface;',
+    'use MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ContextElement;',
 ];
 $cases = [];
 

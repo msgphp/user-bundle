@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use MsgPhp\Domain\Infra\Console\Context\ClassContextFactory as ConsoleClassContextFactory;
-use MsgPhp\Domain\Infra\DependencyInjection\ContainerHelper;
-use MsgPhp\Domain\Infra\DependencyInjection\ExtensionHelper;
-use MsgPhp\Domain\Infra\DependencyInjection\FeatureDetection;
+use MsgPhp\Domain\Infrastructure\Console\Context\ClassContextFactory as ConsoleClassContextFactory;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\ContainerHelper;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\ExtensionHelper;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
 use MsgPhp\User\Credential\CredentialInterface;
-use MsgPhp\User\Infra\Console as ConsoleInfra;
-use MsgPhp\User\Infra\Doctrine as DoctrineInfra;
-use MsgPhp\User\Infra\Security as SecurityInfra;
+use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
+use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
+use MsgPhp\User\Infrastructure\Security as SecurityInfrastructure;
 use MsgPhp\User\Repository;
 use MsgPhp\User\Role;
 use MsgPhp\User\User;
@@ -117,7 +117,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         if (FeatureDetection::hasSecurityBundle($container) && $container->hasDefinition($id = 'data_collector.security')) {
             $container->getDefinition($id)
-                ->setClass(SecurityInfra\DataCollector::class)
+                ->setClass(SecurityInfrastructure\DataCollector::class)
                 ->setArgument('$repository', new Reference(Repository\UserRepositoryInterface::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
             ;
         }
@@ -127,24 +127,24 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader->load('doctrine.php');
 
-        $container->getDefinition(DoctrineInfra\Repository\UserRepository::class)
+        $container->getDefinition(DoctrineInfrastructure\Repository\UserRepository::class)
             ->setArgument('$usernameField', $config['username_field'])
         ;
 
         ExtensionHelper::finalizeDoctrineOrmRepositories($container, $config['class_mapping'], Configuration::DOCTRINE_REPOSITORY_MAPPING);
 
         if ($config['username_lookup'] && $config['doctrine']['auto_sync_username']) {
-            $container->getDefinition(DoctrineInfra\UsernameLookup::class)
+            $container->getDefinition(DoctrineInfrastructure\UsernameLookup::class)
                 ->setArgument('$mapping', $config['username_lookup'])
                 ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true])
             ;
-            $container->getDefinition(DoctrineInfra\Event\UsernameListener::class)
+            $container->getDefinition(DoctrineInfrastructure\Event\UsernameListener::class)
                 ->setArgument('$mapping', $config['username_lookup'])
                 ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true])
             ;
         } else {
-            $container->removeDefinition(DoctrineInfra\UsernameLookup::class);
-            $container->removeDefinition(DoctrineInfra\Event\UsernameListener::class);
+            $container->removeDefinition(DoctrineInfrastructure\UsernameLookup::class);
+            $container->removeDefinition(DoctrineInfrastructure\Event\UsernameListener::class);
         }
     }
 
@@ -152,7 +152,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
     {
         $loader->load('console.php');
 
-        $container->getDefinition(ConsoleInfra\Command\CreateUserCommand::class)
+        $container->getDefinition(ConsoleInfrastructure\Command\CreateUserCommand::class)
             ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                 $container,
                 $config['class_mapping'][User::class]
@@ -160,7 +160,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         ;
 
         if (isset($config['class_mapping'][Role::class])) {
-            $container->getDefinition(ConsoleInfra\Command\CreateRoleCommand::class)
+            $container->getDefinition(ConsoleInfrastructure\Command\CreateRoleCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                     $container,
                     $config['class_mapping'][Role::class]
@@ -169,7 +169,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         if (isset($config['class_mapping'][UserRole::class])) {
-            $container->getDefinition(ConsoleInfra\Command\AddUserRoleCommand::class)
+            $container->getDefinition(ConsoleInfrastructure\Command\AddUserRoleCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                     $container,
                     $config['class_mapping'][UserRole::class],
@@ -179,7 +179,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         if (isset($config['username_field'])) {
-            $container->getDefinition(ConsoleInfra\Command\ChangeUserCredentialCommand::class)
+            $container->getDefinition(ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class)
                 ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
                     $container,
                     $config['class_mapping'][CredentialInterface::class],

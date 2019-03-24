@@ -7,7 +7,7 @@ namespace MsgPhp\UserBundle\Maker;
 use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerInterface;
 use MsgPhp\Domain\Event\DomainEventHandlerTrait;
-use MsgPhp\Domain\Infra\Doctrine\MappingConfig;
+use MsgPhp\Domain\Infrastructure\Doctrine\MappingConfig;
 use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\Credential\CredentialInterface;
 use MsgPhp\User\Credential\PasswordProtectedCredentialInterface;
@@ -608,7 +608,7 @@ PHP;
         ])];
         $this->services[] = <<<PHP
 ->set(${contextElementFactoryClass}::class)
-->alias(MsgPhp\\Domain\\Infra\\Console\\Context\\ClassContextElementFactoryInterface::class, ${contextElementFactoryClass}::class)
+->alias(MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactoryInterface::class, ${contextElementFactoryClass}::class)
 PHP;
     }
 

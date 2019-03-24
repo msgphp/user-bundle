@@ -5,7 +5,7 @@ declare(strict_types=1);
 $fieldType = 'email' === $fieldName ? 'EmailType' : 'TextType';
 $uniqueValidator = 'Unique'.ucfirst($fieldName);
 $uses = [
-    'use MsgPhp\\User\\Infra\\Validator\\UniqueUsername as '.$uniqueValidator.';',
+    'use MsgPhp\\User\\Infrastructure\\Validator\\UniqueUsername as '.$uniqueValidator.';',
     'use Symfony\\Component\\Form\\AbstractType;',
     'use Symfony\\Component\\Form\\Extension\\Core\\Type\\'.$fieldType.';',
     'use Symfony\\Component\\Form\\FormBuilderInterface;',
@@ -27,7 +27,7 @@ $fields = <<<PHP
 PHP;
 
 if ($hasPassword) {
-    $uses[] = 'use MsgPhp\\User\\Infra\\Form\\Type\\HashedPasswordType;';
+    $uses[] = 'use MsgPhp\\User\\Infrastructure\\Form\\Type\\HashedPasswordType;';
     $fields .= <<<'PHP'
 
         $builder->add('password', HashedPasswordType::class, [

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle;
 
-use MsgPhp\Domain\Infra\DependencyInjection\BundleHelper;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\BundleHelper;
 use MsgPhp\UserBundle\DependencyInjection\Compiler\CleanupPass;
 use MsgPhp\UserBundle\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;

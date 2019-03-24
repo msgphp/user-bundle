@@ -6,11 +6,11 @@ return <<<YAML
 # see https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml
 security:
     encoders:
-        MsgPhp\\User\\Infra\\Security\\SecurityUser: ${hashAlgorithm}
+        MsgPhp\\User\\Infrastructure\\Security\\SecurityUser: ${hashAlgorithm}
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
         in_memory: { memory: ~ }
-        msgphp_user: { id: MsgPhp\\User\\Infra\\Security\\SecurityUserProvider }
+        msgphp_user: { id: MsgPhp\\User\\Infrastructure\\Security\\SecurityUserProvider }
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/

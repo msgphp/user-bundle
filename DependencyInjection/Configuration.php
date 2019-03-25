@@ -123,7 +123,7 @@ final class Configuration implements ConfigurationInterface
         ];
 
         if (class_exists(UserAttributeValue::class)) {
-            $dirs[] = \dirname((string) (new \ReflectionClass(UserAttributeValue::class))->getFileName(), 2);
+            $dirs[] = \dirname((string) (new \ReflectionClass(UserAttributeValue::class))->getFileName());
         }
 
         return self::$packageMetadata = new PackageMetadata(self::PACKAGE_NS, $dirs);

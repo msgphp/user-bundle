@@ -136,12 +136,18 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         if ($config['username_lookup'] && $config['doctrine']['auto_sync_username']) {
             $container->getDefinition(DoctrineInfrastructure\UsernameLookup::class)
                 ->setArgument('$mapping', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true])
             ;
-            $container->getDefinition(DoctrineInfrastructure\Event\UsernameListener::class)
+            ($usernameListener = $container->getDefinition(DoctrineInfrastructure\Event\UsernameListener::class))
                 ->setArgument('$mapping', $config['username_lookup'])
-                ->addTag('msgphp.domain.process_class_mapping', ['argument' => '$mapping', 'array_keys' => true])
             ;
+
+            foreach (array_keys($config['username_lookup']) as $entity) {
+                $usernameListener
+                    ->addTag('doctrine.orm.entity_listener', ['entity' => $entity, 'event' => 'prePersist'])
+                    ->addTag('doctrine.orm.entity_listener', ['entity' => $entity, 'event' => 'preUpdate'])
+                    ->addTag('doctrine.orm.entity_listener', ['entity' => $entity, 'event' => 'preRemove'])
+                ;
+            }
         } else {
             $container->removeDefinition(DoctrineInfrastructure\UsernameLookup::class);
             $container->removeDefinition(DoctrineInfrastructure\Event\UsernameListener::class);

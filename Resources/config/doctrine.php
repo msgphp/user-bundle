@@ -20,8 +20,6 @@ return function (ContainerConfigurator $container): void {
         ->set(Doctrine\UsernameLookup::class)
 
         ->set(Doctrine\Event\UsernameListener::class)
-            ->tag('doctrine.orm.entity_listener')
-            ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::loadClassMetadata])
             ->tag('doctrine.event_listener', ['event' => DoctrineOrmEvents::preFlush])
     ;
 

@@ -9,7 +9,7 @@ TWIG;
 if ($hasPassword) {
     $fields .= <<<'TWIG'
 
-        {{ form_row(form.password.password) }}
+        {{ form_row(form.password.plain) }}
         {{ form_row(form.password.confirmation) }}
 TWIG;
 }

@@ -10,7 +10,7 @@ return <<<TWIG
 
     {{ form_start(form) }}
         {{ form_errors(form) }}
-        {{ form_row(form.password.password) }}
+        {{ form_row(form.password.plain) }}
         {{ form_row(form.password.confirmation) }}
 
         <div>

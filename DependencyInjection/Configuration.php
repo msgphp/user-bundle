@@ -176,7 +176,7 @@ final class Configuration implements ConfigurationInterface
                         foreach ($value as $lookup) {
                             ['target' => $target, 'field' => $field, 'mapped_by' => $mappedBy] = $lookup;
                             if (Username::class === $target || is_subclass_of($target, Username::class)) {
-                                throw new \LogicException(sprintf('Lookup target "%s" is not applicable.', (string) $target));
+                                throw new \LogicException(sprintf('Lookup target "%s" is not applicable and should be removed.', (string) $target));
                             }
                             if (null === $mappedBy && !is_subclass_of($target, User::class)) {
                                 throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $target, User::class));
@@ -235,7 +235,10 @@ final class Configuration implements ConfigurationInterface
                 $userCredential = self::getUserCredential($userClass = $config['class_mapping'][User::class]);
                 $config['username_field'] = $userCredential['username_field'];
                 $config['class_mapping'][Credential::class] = $userCredential['class'];
-                $config['commands'][Command\ChangeUserCredential::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandler::class) : false;
+
+                if (!isset($config['commands'][Command\ChangeUserCredential::class])) {
+                    $config['commands'][Command\ChangeUserCredential::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandler::class) : false;
+                }
 
                 if ($config['username_lookup']) {
                     if (!isset($config['class_mapping'][Username::class])) {
@@ -244,6 +247,8 @@ final class Configuration implements ConfigurationInterface
                     if (isset($config['username_field'])) {
                         $config['username_lookup'][$userClass][$config['username_field']] = null;
                     }
+                } elseif (isset($config['class_mapping'][Username::class])) {
+                    throw new \LogicException(sprintf('Mapping the "%s" entity under "class_mapping" requires "username_lookup" to be configured.', Username::class));
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);

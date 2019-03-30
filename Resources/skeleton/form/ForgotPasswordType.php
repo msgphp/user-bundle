@@ -9,6 +9,7 @@ $uses = [
     'use Symfony\\Component\\Form\\AbstractType;',
     'use Symfony\\Component\\Form\\Extension\\Core\\Type\\'.$fieldType.';',
     'use Symfony\\Component\\Form\\FormBuilderInterface;',
+    'use Symfony\\Component\\OptionsResolver\\OptionsResolver;',
     'use Symfony\\Component\\Validator\\Constraints\\NotBlank;',
 ];
 
@@ -33,6 +34,11 @@ final class ForgotPasswordType extends AbstractType
         \$builder->add('${fieldName}', ${fieldType}::class, [
             'constraints' => [${constraints}],
         ]);
+    }
+
+    public function configureOptions(OptionsResolver \$resolver)
+    {
+        \$resolver->setDefault('user_mapping', ['${fieldName}' => 'user']);
     }
 }
 

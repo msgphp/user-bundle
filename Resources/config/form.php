@@ -12,6 +12,7 @@ return function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private()
 
+        ->set(Form\Extension\UserExtension::class)
         ->set(Form\Type\HashedPasswordType::class)
     ;
 };

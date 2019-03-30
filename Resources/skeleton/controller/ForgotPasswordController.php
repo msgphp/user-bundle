@@ -6,7 +6,6 @@ $uses = [
     'use '.$userClass.';',
     'use '.$formNs.'\\ForgotPasswordType;',
     'use MsgPhp\\User\\Command\\RequestUserPasswordCommand;',
-    'use Doctrine\\ORM\\EntityManagerInterface;',
     'use Symfony\\Component\\Form\\FormFactoryInterface;',
     'use Symfony\\Component\\HttpFoundation\\Request;',
     'use Symfony\\Component\\HttpFoundation\\RedirectResponse;',
@@ -39,14 +38,14 @@ final class ForgotPasswordController
         FormFactoryInterface \$formFactory,
         FlashBagInterface \$flashBag,
         Environment \$twig,
-        MessageBusInterface \$bus,
-        EntityManagerInterface \$em
+        MessageBusInterface \$bus
     ): Response {
         \$form = \$formFactory->createNamed('', ForgotPasswordType::class);
         \$form->handleRequest(\$request);
 
         if (\$form->isSubmitted() && \$form->isValid()) {
-            \$user = \$em->getRepository(${userShortClass}::class)->findOneBy(['credential.${fieldName}' => \$form->getData()['${fieldName}']]);
+            /** @var ${userShortClass} \$user */
+            \$user = \$form->getData()['user'];
             \$bus->dispatch(new RequestUserPasswordCommand(\$user->getId()));
             \$flashBag->add('success', 'You\\'re password is requested.');
 

@@ -1,22 +1,15 @@
-<?php
+{% extends '<?= $base_template ?>' %}
 
-declare(strict_types=1);
-
-return <<<TWIG
-{% extends '${base}' %}
-
-{% block ${block} %}
+{% block <?= $base_template_block ?> %}
     <h1>Reset Password</h1>
 
     {{ form_start(form) }}
         {{ form_errors(form) }}
-        {{ form_row(form.password.plain) }}
-        {{ form_row(form.password.confirmation) }}
+        {{ form_row(form.<?= $password_field ?>.plain) }}
+        {{ form_row(form.<?= $password_field ?>.confirmation) }}
 
         <div>
             <input type="submit" value="Reset your password" />
         </div>
     {{ form_end(form) }}
 {% endblock %}
-
-TWIG;

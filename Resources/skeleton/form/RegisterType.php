@@ -1,60 +1,35 @@
-<?php
+<?= "<?php\n" ?>
 
 declare(strict_types=1);
 
-$fieldType = 'email' === $fieldName ? 'EmailType' : 'TextType';
-$uniqueValidator = 'Unique'.ucfirst($fieldName);
-$uses = [
-    'use MsgPhp\\User\\Infrastructure\\Validator\\UniqueUsername as '.$uniqueValidator.';',
-    'use Symfony\\Component\\Form\\AbstractType;',
-    'use Symfony\\Component\\Form\\Extension\\Core\\Type\\'.$fieldType.';',
-    'use Symfony\\Component\\Form\\FormBuilderInterface;',
-    'use Symfony\\Component\\Validator\\Constraints\\NotBlank;',
-];
+namespace <?= $form_ns ?>;
 
-$validators = ['new NotBlank()'];
-if ('EmailType' === $fieldType) {
-    $validators[] = 'new Email()';
-    $uses[] = 'use Symfony\\Component\\Validator\\Constraints\\Email;';
-}
-$validators[] = 'new '.$uniqueValidator.'()';
-
-$constraints = implode(', ', $validators);
-$fields = <<<PHP
-        \$builder->add('${fieldName}', ${fieldType}::class, [
-            'constraints' => [${constraints}],
-        ]);
-PHP;
-
-if ($hasPassword) {
-    $uses[] = 'use MsgPhp\\User\\Infrastructure\\Form\\Type\\HashedPasswordType;';
-    $fields .= <<<'PHP'
-
-        $builder->add('password', HashedPasswordType::class, [
-            'password_confirm' => true,
-            'password_options' => ['constraints' => new NotBlank()],
-        ]);
-PHP;
-}
-
-sort($uses);
-$uses = implode("\n", $uses);
-
-return <<<PHP
-<?php
-
-declare(strict_types=1);
-
-namespace ${ns};
-
-${uses}
+<?php if ($has_password): ?>
+use MsgPhp\User\Infrastructure\Form\Type\HashedPasswordType;
+<?php endif; ?>
+use MsgPhp\User\Infrastructure\Validator\UniqueUsername;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\<?= $username_field_class = 'email' === $username_field ? 'EmailType' : 'TextType' ?>;
+use Symfony\Component\Form\FormBuilderInterface;
+<?php if ('email' === $username_field): ?>
+use Symfony\Component\Validator\Constraints\Email;
+<?php endif; ?>
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 final class RegisterType extends AbstractType
 {
-    public function buildForm(FormBuilderInterface \$builder, array \$options)
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
-${fields}
+        $builder
+            ->add('<?= $username_field ?>', <?= $username_field_class ?>::class, [
+                'constraints' => [new NotBlank(), <?= 'email' === $username_field ? 'new Email(), ' : '' ?>new UniqueUsername()],
+            ])
+<?php if ($has_password): ?>
+            ->add('password', HashedPasswordType::class, [
+                'password_confirm' => true,
+                'password_options' => ['constraints' => new NotBlank()],
+            ])
+<?php endif; ?>
+        ;
     }
 }
-
-PHP;

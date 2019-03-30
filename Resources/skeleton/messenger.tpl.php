@@ -1,8 +1,3 @@
-<?php
-
-declare(strict_types=1);
-
-return <<<'YAML'
 # see https://github.com/symfony/recipes/blob/master/symfony/messenger/4.1/config/packages/messenger.yaml
 framework:
     messenger:
@@ -27,5 +22,3 @@ framework:
 services:
     msgphp.messenger.command_bus: '@command_bus'
     msgphp.messenger.event_bus: '@event_bus'
-
-YAML;

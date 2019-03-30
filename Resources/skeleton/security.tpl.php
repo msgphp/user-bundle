@@ -1,16 +1,11 @@
-<?php
-
-declare(strict_types=1);
-
-return <<<YAML
 # see https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml
 security:
     encoders:
-        MsgPhp\\User\\Infrastructure\\Security\\SecurityUser: ${hashAlgorithm}
+        MsgPhp\User\Infrastructure\Security\SecurityUser: <?= $password_algorithm."\n" ?>
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
         in_memory: { memory: ~ }
-        msgphp_user: { id: MsgPhp\\User\\Infrastructure\\Security\\SecurityUserProvider }
+        msgphp_user: { id: MsgPhp\User\Infrastructure\Security\SecurityUserProvider }
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -29,8 +24,8 @@ security:
                 login_path: /login
                 check_path: /login
                 default_target_path: /profile
-                username_parameter: ${fieldName}
-                password_parameter: password
+                username_parameter: <?= $username_field."\n" ?>
+                password_parameter: <?= $password_field ?>
 
             logout:
                 path: logout
@@ -40,5 +35,3 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/profile, roles: IS_AUTHENTICATED_FULLY }
-
-YAML;

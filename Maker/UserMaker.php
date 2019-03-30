@@ -113,7 +113,7 @@ final class UserMaker implements MakerInterface
         }
 
         if ($io->confirm('Enable Symfony Messenger configuration (recommended)? (config/packages/messenger.yaml)')) {
-            $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
+            $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', $this->getSkeleton('messenger.tpl.php')];
         }
 
         $this->generateUser($io);
@@ -121,7 +121,7 @@ final class UserMaker implements MakerInterface
         $this->generateConsole($io);
 
         if ($this->configs || $this->services) {
-            array_unshift($this->writes, [$this->projectDir.'/config/packages/msgphp_user.make.php', self::getSkeleton('config.php', [
+            array_unshift($this->writes, [$this->projectDir.'/config/packages/msgphp_user.make.php', $this->getSkeleton('config.tpl.php', [
                 'config' => $this->configs ? var_export(array_merge_recursive(...$this->configs), true) : null,
                 'services' => $this->services,
             ])]);
@@ -129,7 +129,7 @@ final class UserMaker implements MakerInterface
         }
 
         if ($this->routes) {
-            array_unshift($this->writes, [$this->projectDir.'/config/routes/user.php', self::getSkeleton('routes.php', [
+            array_unshift($this->writes, [$this->projectDir.'/config/routes/user.php', $this->getSkeleton('routes.tpl.php', [
                 'routes' => $this->routes,
             ])]);
             $this->routes = [];
@@ -187,9 +187,15 @@ final class UserMaker implements MakerInterface
         }
 
         $io->success('Done!');
-        $io->note('Don\'t forget to update your database schema, if needed');
 
-        if ($written && $io->confirm('Show written file names?')) {
+        if (!$written) {
+            $io->note('No files were written.');
+
+            return;
+        }
+
+        $io->note('Don\'t forget to update your database schema, if needed');
+        if ($io->confirm('Show written file names?')) {
             sort($written);
             $io->listing($written);
         }
@@ -291,11 +297,13 @@ final class UserMaker implements MakerInterface
         $nl = $nl ?? \PHP_EOL;
         $addUses = $addTraitUses = $addImplementors = [];
         $write = false;
-        $enableEventHandler = function () use ($implementors, &$addUses, &$addImplementors, &$addTraitUses): void {
+        $enableEventHandler = function () use ($implementors, $traits, &$addUses, &$addImplementors, &$addTraitUses): void {
             if (!isset($implementors[DomainEventHandler::class])) {
                 $addUses[DomainEventHandler::class] = true;
+                $addImplementors['DomainEventHandler'] = true;
+            }
+            if (!isset($traits[DomainEventHandlerTrait::class])) {
                 $addUses[DomainEventHandlerTrait::class] = true;
-                $addImplementors['DomainEventHandlerInterface'] = true;
                 $addTraitUses['DomainEventHandlerTrait'] = true;
             }
         };
@@ -371,8 +379,7 @@ PHP
             $this->configs[] = ['class_mapping' => [Credential::class => $credentialClass]];
         }
 
-        $this->passwordReset = isset($traits[ResettablePassword::class]);
-        if (!$this->passwordReset && $this->hasPassword() && $io->confirm('Can users reset their password?')) {
+        if (!isset($traits[ResettablePassword::class]) && $this->hasPassword() && $io->confirm('Can users reset their password?')) {
             $addUses[ResettablePassword::class] = true;
             $addTraitUses['ResettablePassword'] = true;
             $enableEventHandler();
@@ -382,18 +389,19 @@ PHP
         $roleProviders = [];
         if (!isset($this->classMapping[Role::class]) && $io->confirm('Can users have assigned roles?')) {
             $baseDir = \dirname($this->user->getFileName());
-            $vars = ['ns' => $ns = $this->user->getNamespaceName()];
-
-            $addUses[RolesField::class] = true;
-            $addTraitUses['RolesField'] = true;
-
-            $this->writes[] = [$baseDir.'/Role.php', $this->mappingConfig->interpolate(self::getSkeleton('entity/Role.php', $vars))];
-            $this->writes[] = [$baseDir.'/UserRole.php', self::getSkeleton('entity/UserRole.php', $vars)];
+            $baseNs = $this->user->getNamespaceName();
+            $this->writes[] = [$baseDir.'/Role.php', $this->getSkeleton('entity/Role.tpl.php')];
+            $this->writes[] = [$baseDir.'/UserRole.php', $this->getSkeleton('entity/UserRole.tpl.php')];
             $this->configs[] = ['class_mapping' => [
-                Role::class => $ns.'\\Role',
-                UserRole::class => $userRoleClass = $ns.'\\UserRole',
+                Role::class => $baseNs.'\\Role',
+                UserRole::class => $baseNs.'\\UserRole',
             ]];
             $roleProviders[] = Role\UserRoleProvider::class;
+
+            if (!isset($traits[RolesField::class])) {
+                $addUses[RolesField::class] = true;
+                $addTraitUses['RolesField'] = true;
+            }
         }
 
         $defaultRoles = [];
@@ -481,15 +489,29 @@ PHP
             }
         }
 
-        $usernameField = $this->getUsernameField();
-        $nsForm = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
-        $nsController = trim($io->ask('Provide the controller namespace', 'App\\Controller\\User\\'), '\\');
+        $formNs = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
+        $controllerNs = trim($io->ask('Provide the controller namespace', 'App\\Controller\\User\\'), '\\');
         $templateDir = trim($io->ask('Provide the base template directory', 'user/'), '/');
         $baseTemplate = ltrim($io->ask('Provide the base template file', 'base.html.twig'), '/');
         $baseTemplateBlock = $io->ask('Provide the base template block name', 'body');
         $hasRegistration = $this->hasUsername() && $io->confirm('Add a registration controller?');
-        $hasForgotPassword = $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
-        $hasLogin = $this->hasPassword() && $io->confirm('Add a login and profile controller?'); // keep last
+        $hasLogin = $this->hasUsername() && $this->hasPassword() && $io->confirm('Add a login and profile controller?');
+        $hasForgotPassword = $this->hasUsername() && $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
+
+        if ('' !== $templateDir) {
+            $templateDir .= '/';
+        }
+
+        $vars = [
+            'form_ns' => $formNs,
+            'controller_ns' => $controllerNs,
+            'template_dir' => $templateDir,
+            'base_template' => $baseTemplate,
+            'base_template_block' => $baseTemplateBlock,
+            'has_registration' => $hasRegistration,
+            'has_login' => $hasLogin,
+            'has_forgot_password' => $hasForgotPassword,
+        ];
 
         if ($hasLogin) {
             if (!class_exists(Security::class)) {
@@ -503,112 +525,39 @@ PHP
             $this->routes[] = <<<'PHP'
 ->add('logout', '/logout')
 PHP;
-            $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', self::getSkeleton('security.php', [
-                'hashAlgorithm' => $this->getPasswordHashAlgorithm(),
-                'fieldName' => $usernameField,
-            ])];
+            $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', $this->getSkeleton('security.tpl.php')];
+
+            $this->writes[] = [$this->getClassFileName($formNs.'\\LoginType'), $this->getSkeleton('form/LoginType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($controllerNs.'\\LoginController'), $this->getSkeleton('controller/LoginController.tpl.php', $vars)];
+            $this->writes[] = [$this->getTemplateFileName($templateDir.'login.html.twig'), $this->getSkeleton('template/login.tpl.php', $vars)];
+
+            $this->writes[] = [$this->getClassFileName($controllerNs.'\\ProfileController'), $this->getSkeleton('controller/ProfileController.tpl.php', $vars)];
+            $this->writes[] = [$this->getTemplateFileName($templateDir.'profile.html.twig'), $this->getSkeleton('template/profile.tpl.php', $vars)];
         }
 
         if ($hasRegistration) {
-            $this->writes[] = [$this->getClassFileName($nsForm.'\\RegisterType'), self::getSkeleton('form/RegisterType.php', [
-                'hasPassword' => $this->hasPassword(),
-                'ns' => $nsForm,
-                'fieldName' => $usernameField,
-            ])];
-            $this->writes[] = [$this->getClassFileName($nsController.'\\RegisterController'), self::getSkeleton('controller/RegisterController.php', [
-                'ns' => $nsController,
-                'formNs' => $nsForm,
-                'fieldName' => $usernameField,
-                'template' => $template = $templateDir.'/register.html.twig',
-                'redirect' => $hasLogin ? '/login' : '/',
-            ])];
-            $this->writes[] = [$this->getTemplateFileName($template), self::getSkeleton('template/register.html.php', [
-                'hasPassword' => $this->hasPassword(),
-                'base' => $baseTemplate,
-                'block' => $baseTemplateBlock,
-                'fieldName' => $usernameField,
-            ])];
-        }
-
-        if ($hasLogin) {
-            $this->writes[] = [$this->getClassFileName($nsForm.'\\LoginType'), self::getSkeleton('form/LoginType.php', [
-                'ns' => $nsForm,
-                'fieldName' => $usernameField,
-            ])];
-            $this->writes[] = [$this->getClassFileName($nsController.'\\LoginController'), self::getSkeleton('controller/LoginController.php', [
-                'ns' => $nsController,
-                'formNs' => $nsForm,
-                'fieldName' => $usernameField,
-                'template' => $templateLogin = $templateDir.'/login.html.twig',
-            ])];
-            $this->writes[] = [$this->getClassFileName($nsController.'\\ProfileController'), self::getSkeleton('controller/ProfileController.php', [
-                'ns' => $nsController,
-                'template' => $templateProfile = $templateDir.'/profile.html.twig',
-            ])];
-            $this->writes[] = [$this->getTemplateFileName($templateLogin), self::getSkeleton('template/login.html.php', [
-                'hasForgotPassword' => $hasForgotPassword,
-                'base' => $baseTemplate,
-                'block' => $baseTemplateBlock,
-                'fieldName' => $usernameField,
-            ])];
-            $this->writes[] = [$this->getTemplateFileName($templateProfile), self::getSkeleton('template/profile.html.php', [
-                'base' => $baseTemplate,
-                'block' => $baseTemplateBlock,
-                'fieldName' => $usernameField,
-            ])];
+            $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($controllerNs.'\\RegisterController'), $this->getSkeleton('controller/RegisterController.tpl.php', $vars)];
+            $this->writes[] = [$this->getTemplateFileName($templateDir.'register.html.twig'), $this->getSkeleton('template/register.tpl.php', $vars)];
         }
 
         if ($hasForgotPassword) {
-            $this->writes[] = [$this->getClassFileName($nsForm.'\\ForgotPasswordType'), self::getSkeleton('form/ForgotPasswordType.php', [
-                'ns' => $nsForm,
-                'fieldName' => $usernameField,
-            ])];
-            $this->writes[] = [$this->getClassFileName($nsForm.'\\ResetPasswordType'), self::getSkeleton('form/ResetPasswordType.php', [
-                'ns' => $nsForm,
-            ])];
-            $this->writes[] = [$this->getClassFileName($nsController.'\\ForgotPasswordController'), self::getSkeleton('controller/ForgotPasswordController.php', [
-                'ns' => $nsController,
-                'formNs' => $nsForm,
-                'fieldName' => $usernameField,
-                'userClass' => $this->user->getName(),
-                'userShortClass' => $this->user->getShortName(),
-                'template' => $templateForgot = $templateDir.'/forgot_password.html.twig',
-            ])];
-            $this->writes[] = [$this->getClassFileName($nsController.'\\ResetPasswordController'), self::getSkeleton('controller/ResetPasswordController.php', [
-                'ns' => $nsController,
-                'formNs' => $nsForm,
-                'userClass' => $this->user->getName(),
-                'userShortClass' => $this->user->getShortName(),
-                'template' => $templateReset = $templateDir.'/reset_password.html.twig',
-            ])];
-            $this->writes[] = [$this->getTemplateFileName($templateForgot), self::getSkeleton('template/forgot_password.html.php', [
-                'base' => $baseTemplate,
-                'block' => $baseTemplateBlock,
-                'fieldName' => $usernameField,
-            ])];
-            $this->writes[] = [$this->getTemplateFileName($templateReset), self::getSkeleton('template/reset_password.html.php', [
-                'base' => $baseTemplate,
-                'block' => $baseTemplateBlock,
-                'fieldName' => $usernameField,
-            ])];
+            $this->writes[] = [$this->getClassFileName($formNs.'\\ForgotPasswordType'), $this->getSkeleton('form/ForgotPasswordType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($controllerNs.'\\ResetPasswordController'), $this->getSkeleton('controller/ResetPasswordController.tpl.php', $vars)];
+            $this->writes[] = [$this->getTemplateFileName($templateDir.'forgot_password.html.twig'), $this->getSkeleton('template/forgot_password.tpl.php', $vars)];
+
+            $this->writes[] = [$this->getClassFileName($formNs.'\\ResetPasswordType'), $this->getSkeleton('form/ResetPasswordType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($controllerNs.'\\ForgotPasswordController'), $this->getSkeleton('controller/ForgotPasswordController.tpl.php', $vars)];
+            $this->writes[] = [$this->getTemplateFileName($templateDir.'reset_password.html.twig'), $this->getSkeleton('template/reset_password.tpl.php', $vars)];
         }
     }
 
     private function generateConsole(ConsoleStyle $io): void
     {
-        [$contextElementFactoryNs, $contextElementFactoryShortClass] = self::splitClass($contextElementFactoryClass = 'App\\Console\\ClassContextElementFactory');
-
-        $this->writes[] = [$this->getClassFileName($contextElementFactoryClass), self::getSkeleton('service/ClassContextElementFactory.php', [
-            'ns' => $contextElementFactoryNs,
-            'class' => $contextElementFactoryShortClass,
-            'userClass' => $this->user->getName(),
-            'userShortClass' => $this->user->getShortName(),
-            'credentialClass' => $this->credential,
-            'credentialShortClass' => self::splitClass($this->credential)[1],
-        ])];
-        $this->services[] = <<<PHP
-->set(${contextElementFactoryClass}::class)
-->alias(MsgPhp\\Domain\\Infrastructure\\Console\\Context\\ClassContextElementFactory::class, ${contextElementFactoryClass}::class)
+        $this->writes[] = [$this->getClassFileName('App\\Console\\ClassContextElementFactory'), $this->getSkeleton('service/ClassContextElementFactory.tpl.php')];
+        $this->services[] = <<<'PHP'
+->set(App\Console\ClassContextElementFactory::class)
+->alias(MsgPhp\Domain\Infrastructure\Console\Context\ClassContextElementFactory::class, App\Console\ClassContextElementFactory::class)
 PHP;
     }
 
@@ -636,12 +585,15 @@ PHP;
         return isset($matches[0][0]) ? implode(', ', $matches[0]) : '';
     }
 
-    private static function getSkeleton(string $path, array $vars = []): string
+    private function getSkeleton(string $path, array $vars = []): string
     {
         return (function () use ($path, $vars): string {
-            extract($vars, \EXTR_OVERWRITE);
+            extract($vars + $this->getDefaultTemplateVars(), \EXTR_OVERWRITE);
 
-            return require \dirname(__DIR__).'/Resources/skeleton/'.$path;
+            ob_start();
+            require \dirname(__DIR__).'/Resources/skeleton/'.$path;
+
+            return ob_get_clean();
         })();
     }
 
@@ -662,6 +614,23 @@ PHP;
         return $this->projectDir.'/templates/'.$path;
     }
 
+    private function getDefaultTemplateVars(): array
+    {
+        return [
+            'entity_ns' => $this->user->getNamespaceName(),
+            'entity_key_max_length' => $this->mappingConfig->keyMaxLength,
+            'user_class' => $this->user->getName(),
+            'user_short_class' => $this->user->getShortName(),
+            'credential_class' => $this->credential,
+            'credential_short_class' => self::splitClass($this->credential)[1],
+            'has_username' => $hasUsername = is_subclass_of($this->credential, UsernameCredential::class),
+            'username_field' => $hasUsername ? $this->credential::getUsernameField() : null,
+            'has_password' => $hasPassword = is_subclass_of($this->credential, PasswordProtectedCredential::class),
+            'password_field' => $hasPassword ? $this->credential::getPasswordField() : null,
+            'password_algorithm' => \PASSWORD_DEFAULT === (\defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2) ? 'argon2i' : 'bcrypt',
+        ];
+    }
+
     private function getClassFileName(string $class): string
     {
         if (0 === strpos($class, 'App\\')) {
@@ -676,24 +645,8 @@ PHP;
         return is_subclass_of($this->credential, UsernameCredential::class);
     }
 
-    private function getUsernameField(): ?string
-    {
-        return $this->hasUsername() ? $this->credential::getUsernameField() : null;
-    }
-
     private function hasPassword(): bool
     {
         return is_subclass_of($this->credential, PasswordProtectedCredential::class);
-    }
-
-    private function getPasswordHashAlgorithm(): string
-    {
-        switch (\PASSWORD_DEFAULT) {
-            case \defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2:
-                return 'argon2i';
-            case \PASSWORD_BCRYPT:
-            default:
-                return 'bcrypt';
-        }
     }
 }

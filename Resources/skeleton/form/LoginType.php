@@ -1,34 +1,21 @@
-<?php
+<?= "<?php\n" ?>
 
 declare(strict_types=1);
 
-$fieldType = 'email' === $fieldName ? 'EmailType' : 'TextType';
-$uses = [
-    'use Symfony\\Component\\Form\\AbstractType;',
-    'use Symfony\\Component\\Form\\Extension\\Core\\Type\\'.$fieldType.';',
-    'use Symfony\\Component\\Form\\Extension\\Core\\Type\\PasswordType;',
-    'use Symfony\\Component\\Form\\FormBuilderInterface;',
-];
+namespace <?= $form_ns ?>;
 
-sort($uses);
-$uses = implode("\n", $uses);
-
-return <<<PHP
-<?php
-
-declare(strict_types=1);
-
-namespace ${ns};
-
-${uses}
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\<?= $username_field_class = 'email' === $username_field ? 'EmailType' : 'TextType' ?>;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\FormBuilderInterface;
 
 final class LoginType extends AbstractType
 {
-    public function buildForm(FormBuilderInterface \$builder, array \$options)
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        \$builder->add('${fieldName}', ${fieldType}::class);
-        \$builder->add('password', PasswordType::class);
+        $builder
+            ->add('<?= $username_field ?>', <?= $username_field_class ?>::class)
+            ->add('<?= $password_field ?>', PasswordType::class)
+        ;
     }
 }
-
-PHP;

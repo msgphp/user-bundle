@@ -11,6 +11,7 @@ use MsgPhp\Domain\Infrastructure\Doctrine\MappingConfig;
 use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Credential\PasswordProtectedCredential;
+use MsgPhp\User\Credential\UsernameCredential;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Model\RolesField;
 use MsgPhp\User\Role;
@@ -87,9 +88,12 @@ final class UserMaker implements MakerInterface
         $this->configs = $this->services = $this->routes = $this->writes = [];
         $this->interactive = $input->isInteractive();
 
-        if (!isset($this->classMapping[User::class])) {
+        if (!isset($this->classMapping[User::class]) || !isset($this->classMapping[Credential::class])) {
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
         }
+
+        $this->user = new \ReflectionClass($this->classMapping[User::class]);
+        $this->credential = $this->classMapping[Credential::class];
 
         $continue = true;
         if (!class_exists(Differ::class)) {
@@ -100,12 +104,10 @@ final class UserMaker implements MakerInterface
             $io->note(['It\'s recommended to enable Doctrine ORM, run:', 'composer require orm']);
             $continue = false;
         }
-
         if (!interface_exists(MessageBusInterface::class)) {
             $io->note(['It\'s recommended to enable Symfony Messenger, run:', 'composer require messenger']);
             $continue = false;
         }
-
         if (!$continue && !$io->confirm('Continue anyway?', false)) {
             return;
         }
@@ -113,8 +115,6 @@ final class UserMaker implements MakerInterface
         if ($io->confirm('Enable Symfony Messenger configuration (recommended)? (config/packages/messenger.yaml)')) {
             $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', self::getSkeleton('messenger.php')];
         }
-
-        $this->user = new \ReflectionClass($this->classMapping[User::class]);
 
         $this->generateUser($io);
         $this->generateControllers($io);
@@ -300,9 +300,7 @@ final class UserMaker implements MakerInterface
             }
         };
 
-        $this->credential = $this->classMapping[Credential::class] ?? null;
-
-        if (!$this->hasCredential() && $io->confirm('Generate a user credential?')) {
+        if (Anonymous::class === $this->credential && $io->confirm('Generate a user credential?')) {
             $credentials = [];
             foreach (Configuration::getPackageMetadata()->findPaths('Credential') as $path) {
                 if ('.php' !== substr($path, -4) || !is_file($path) || Anonymous::class === ($credentialClass = Configuration::PACKAGE_NS.'Credential\\'.($credential = basename($path, '.php'))) || !is_subclass_of($credentialClass, Credential::class) || !class_exists($credentialClass, false)) {
@@ -369,6 +367,8 @@ PHP
                     $traitUseLine += 4;
                 }
             }
+
+            $this->configs[] = ['class_mapping' => [Credential::class => $credentialClass]];
         }
 
         $this->passwordReset = isset($traits[ResettablePassword::class]);
@@ -481,13 +481,13 @@ PHP
             }
         }
 
-        $usernameField = $this->hasCredential() ? $this->credential::getUsernameField() : null;
+        $usernameField = $this->getUsernameField();
         $nsForm = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
         $nsController = trim($io->ask('Provide the controller namespace', 'App\\Controller\\User\\'), '\\');
         $templateDir = trim($io->ask('Provide the base template directory', 'user/'), '/');
         $baseTemplate = ltrim($io->ask('Provide the base template file', 'base.html.twig'), '/');
         $baseTemplateBlock = $io->ask('Provide the base template block name', 'body');
-        $hasRegistration = $this->hasCredential() && $io->confirm('Add a registration controller?');
+        $hasRegistration = $this->hasUsername() && $io->confirm('Add a registration controller?');
         $hasForgotPassword = $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
         $hasLogin = $this->hasPassword() && $io->confirm('Add a login and profile controller?'); // keep last
 
@@ -671,14 +671,19 @@ PHP;
         return $this->projectDir.'/src/'.str_replace('\\', '/', $class).'.php';
     }
 
-    private function hasCredential(): bool
+    private function hasUsername(): bool
     {
-        return null !== $this->credential && Anonymous::class !== $this->credential;
+        return is_subclass_of($this->credential, UsernameCredential::class);
+    }
+
+    private function getUsernameField(): ?string
+    {
+        return $this->hasUsername() ? $this->credential::getUsernameField() : null;
     }
 
     private function hasPassword(): bool
     {
-        return null !== $this->credential && is_subclass_of($this->credential, PasswordProtectedCredential::class);
+        return is_subclass_of($this->credential, PasswordProtectedCredential::class);
     }
 
     private function getPasswordHashAlgorithm(): string

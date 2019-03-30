@@ -15,6 +15,7 @@ use MsgPhp\Domain\Model\CanBeEnabled;
 use MsgPhp\User\Command;
 use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\Credential\Credential;
+use MsgPhp\User\Credential\UsernameCredential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
 use MsgPhp\User\Infrastructure\Uuid as UuidInfrastructure;
@@ -152,6 +153,10 @@ final class Configuration implements ConfigurationInterface
                 ->defaultValue(ConfigHelper::DEFAULT_ID_TYPE)
                 ->cannotBeEmpty()
             ->end()
+            ->scalarNode('credential_field')
+                ->cannotBeEmpty()
+                ->defaultValue('credential')
+            ->end()
             ->arrayNode('username_lookup')
                 ->requiresAtLeastOneElement()
                 ->arrayPrototype()
@@ -232,13 +237,10 @@ final class Configuration implements ConfigurationInterface
         ->end()
         ->validate()
             ->always(function (array $config): array {
-                $userCredential = self::getUserCredential($userClass = $config['class_mapping'][User::class]);
-                $config['username_field'] = $userCredential['username_field'];
-                $config['class_mapping'][Credential::class] = $userCredential['class'];
+                $userClass = $config['class_mapping'][User::class];
+                $credentialClass = $config['class_mapping'][Credential::class] ?? ($config['class_mapping'][Credential::class] = self::guessUserCredential($userClass));
 
-                if (!isset($config['commands'][Command\ChangeUserCredential::class])) {
-                    $config['commands'][Command\ChangeUserCredential::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandler::class) : false;
-                }
+                $config['username_field'] = is_subclass_of($credentialClass, UsernameCredential::class) ? $config['credential_field'].'.'.$credentialClass::getUsernameField() : null;
 
                 if ($config['username_lookup']) {
                     if (!isset($config['class_mapping'][Username::class])) {
@@ -251,6 +253,10 @@ final class Configuration implements ConfigurationInterface
                     throw new \LogicException(sprintf('Mapping the "%s" entity under "class_mapping" requires "username_lookup" to be configured.', Username::class));
                 }
 
+                if (!isset($config['commands'][Command\ChangeUserCredential::class])) {
+                    $config['commands'][Command\ChangeUserCredential::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandler::class) : false;
+                }
+
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);
 
                 return $config;
@@ -261,30 +267,21 @@ final class Configuration implements ConfigurationInterface
         return $treeBuilder;
     }
 
-    private static function getUserCredential(string $userClass): array
+    private static function guessUserCredential(string $class): string
     {
-        $reflection = new \ReflectionMethod($userClass, 'getCredential');
-
-        if (User::class === $reflection->getDeclaringClass()->getName()) {
-            return ['class' => Anonymous::class, 'username_field' => null];
+        if (User::class === (new \ReflectionMethod($class, 'getCredential'))->getDeclaringClass()->getName()) {
+            return Anonymous::class;
         }
 
-        if (null === $type = $reflection->getReturnType()) {
-            throw new \LogicException(sprintf('Method "%s::getCredential()" must have a return type set.', $userClass));
+        $uses = class_uses($class);
+
+        foreach (self::getPackageMetadata()->findPaths('Model') as $model) {
+            $credential = self::PACKAGE_NS.'Credential\\'.($model = substr(basename($model, '.php'), 0, -10));
+            if (isset($uses[self::PACKAGE_NS.'Model\\'.$model.'Credential']) && is_subclass_of($credential, Credential::class)) {
+                return $credential;
+            }
         }
 
-        if (Anonymous::class === $class = $type->getName()) {
-            return ['class' => $class, 'username_field' => null];
-        }
-
-        if ($type->isBuiltin() || !is_subclass_of($class, Credential::class)) {
-            throw new \LogicException(sprintf('Method "%s::getCredential()" must return a sub class of "%s", got "%s".', $userClass, Credential::class, $class));
-        }
-
-        if ($type->allowsNull()) {
-            throw new \LogicException(sprintf('Method "%s::getCredential()" cannot be null-able.', $userClass));
-        }
-
-        return ['class' => $class, 'username_field' => 'credential.'.$class::getUsernameField()];
+        return Anonymous::class;
     }
 }

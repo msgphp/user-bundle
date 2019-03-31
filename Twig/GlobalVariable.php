@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\Twig;
 
-use MsgPhp\User\Infrastructure\Security\SecurityUser;
+use MsgPhp\User\Infrastructure\Security\UserIdentity;
 use MsgPhp\User\Repository\UserRepository;
 use MsgPhp\User\User;
 use MsgPhp\User\UserId;
@@ -41,13 +41,13 @@ final class GlobalVariable
             throw new \LogicException('User not authenticated.');
         }
 
-        $user = $token->getUser();
+        $identity = $token->getUser();
 
-        if (!$user instanceof SecurityUser) {
+        if (!$identity instanceof UserIdentity) {
             throw new \LogicException('User not authenticated.');
         }
 
-        return $user->getUserId();
+        return $identity->getUserId();
     }
 
     public function isUserType(User $user, string $class): bool

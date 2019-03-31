@@ -21,7 +21,7 @@ return function (ContainerConfigurator $container): void {
 
         ->set('.msgphp_user.security.password_hashing', PasswordEncoderInterface::class)
             ->factory([ref('security.encoder_factory'), 'getEncoder'])
-            ->args([Security\SecurityUser::class])
+            ->args([Security\UserIdentity::class])
         ->alias(PasswordEncoderInterface::class, '.msgphp_user.security.password_hashing')
 
         ->set(Security\PasswordHashing::class)

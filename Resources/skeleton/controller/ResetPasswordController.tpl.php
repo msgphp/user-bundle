@@ -6,7 +6,7 @@ namespace <?= $controller_ns ?>;
 
 use <?= $user_class ?>;
 use <?= $form_ns ?>\ResetPasswordType;
-use MsgPhp\User\Command\ChangeUserCredential;
+use MsgPhp\User\Command\ResetUserPassword;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +42,7 @@ final class ResetPasswordController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $bus->dispatch(new ChangeUserCredential($user->getId(), $form->getData()));
+            $bus->dispatch(new ResetUserPassword($user->getId(), $form->getData()['<?= $password_field ?>']));
             $flashBag->add('success', 'You\'re password is changed.');
 
             return new RedirectResponse('/login');

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MsgPhp\UserBundle\DependencyInjection;
 
 use MsgPhp\Domain\DomainId;
-use MsgPhp\Domain\Event\DomainEventHandler;
 use MsgPhp\Domain\Infrastructure\Config\NodeBuilder;
 use MsgPhp\Domain\Infrastructure\Config\TreeBuilderHelper;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\ConfigHelper;
@@ -19,6 +18,7 @@ use MsgPhp\User\Credential\UsernameCredential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
 use MsgPhp\User\Infrastructure\Uuid as UuidInfrastructure;
+use MsgPhp\User\Model\AbstractCredential;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Role;
 use MsgPhp\User\ScalarUserId;
@@ -77,6 +77,9 @@ final class Configuration implements ConfigurationInterface
             Command\CreateUser::class,
             Command\DeleteUser::class,
 
+            AbstractCredential::class => [
+                Command\ChangeUserCredential::class,
+            ],
             CanBeConfirmed::class => [
                 Command\ConfirmUser::class,
             ],
@@ -85,7 +88,9 @@ final class Configuration implements ConfigurationInterface
                 Command\EnableUser::class,
             ],
             ResettablePassword::class => [
+                Command\CancelUserPasswordRequest::class,
                 Command\RequestUserPassword::class,
+                Command\ResetUserPassword::class,
             ],
         ],
         UserAttributeValue::class => [
@@ -251,10 +256,6 @@ final class Configuration implements ConfigurationInterface
                     }
                 } elseif (isset($config['class_mapping'][Username::class])) {
                     throw new \LogicException(sprintf('Mapping the "%s" entity under "class_mapping" requires "username_lookup" to be configured.', Username::class));
-                }
-
-                if (!isset($config['commands'][Command\ChangeUserCredential::class])) {
-                    $config['commands'][Command\ChangeUserCredential::class] = isset($config['username_field']) ? is_subclass_of($userClass, DomainEventHandler::class) : false;
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);

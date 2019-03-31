@@ -80,7 +80,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         if (FeatureDetection::hasSecurityBundle($container)) {
-            $loader->load('security.tpl.php');
+            $loader->load('security.php');
         }
 
         if (FeatureDetection::hasTwigBundle($container)) {

@@ -128,7 +128,7 @@ final class UserMaker implements MakerInterface
         $written = [];
         $writer = function (string $file, string $contents) use ($io, &$written): void {
             if (!file_put_contents($file, $contents)) {
-                $io->error(sprintf('Cannot write changes to "%s"', $file));
+                $io->error('Cannot write changes to '.$file);
 
                 return;
             }

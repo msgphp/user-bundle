@@ -186,10 +186,10 @@ final class Configuration implements ConfigurationInterface
                         foreach ($value as $lookup) {
                             ['target' => $target, 'field' => $field, 'mapped_by' => $mappedBy] = $lookup;
                             if (Username::class === $target || is_subclass_of($target, Username::class)) {
-                                throw new \LogicException(sprintf('Lookup target "%s" is not applicable and should be removed.', (string) $target));
+                                throw new \LogicException('Lookup target "'.$target.'" is not applicable and should be removed.');
                             }
                             if (null === $mappedBy && !is_subclass_of($target, User::class)) {
-                                throw new \LogicException(sprintf('Lookup for target "%s" must be a sub class of "%s" or specify the "mapped_by" node.', $target, User::class));
+                                throw new \LogicException('Lookup for target "'.$target.'" must be a sub class of "'.User::class.'" or specify the "mapped_by" node.');
                             }
 
                             $result[$target][$field] = $mappedBy;
@@ -210,7 +210,7 @@ final class Configuration implements ConfigurationInterface
                             } elseif (false === $value['default']) {
                                 $value['default'] = [];
                             } elseif (!\is_array($value['default'])) {
-                                throw new \LogicException(sprintf('Default role provider must be of type array or false, got "%s".', \gettype($value['default'])));
+                                throw new \LogicException('Default role provider must be of type array or false, got "'.\gettype($value['default']).'".');
                             }
                         }
 
@@ -221,7 +221,7 @@ final class Configuration implements ConfigurationInterface
                     ->always(function (array $value): array {
                         foreach ($value as $k => $v) {
                             if ('default' !== $k && !\is_string($v)) {
-                                throw new \LogicException(sprintf('Role provider must be of type string, got "%s".', \gettype($v)));
+                                throw new \LogicException('Role provider must be of type string, got "'.\gettype($v).'".');
                             }
                         }
 
@@ -249,13 +249,13 @@ final class Configuration implements ConfigurationInterface
 
                 if ($config['username_lookup']) {
                     if (!isset($config['class_mapping'][Username::class])) {
-                        throw new \LogicException(sprintf('Configuring "username_lookup" requires the "%s" entity to be mapped under "class_mapping".', Username::class));
+                        throw new \LogicException('Configuring "username_lookup" requires the "'.Username::class.'" entity to be mapped under "class_mapping".');
                     }
                     if (isset($config['username_field'])) {
                         $config['username_lookup'][$userClass][$config['username_field']] = null;
                     }
                 } elseif (isset($config['class_mapping'][Username::class])) {
-                    throw new \LogicException(sprintf('Mapping the "%s" entity under "class_mapping" requires "username_lookup" to be configured.', Username::class));
+                    throw new \LogicException('Mapping the "'.Username::class.'" entity under "class_mapping" requires "username_lookup" to be configured.');
                 }
 
                 ConfigHelper::resolveCommandMappingConfig(self::COMMAND_MAPPING, $config['class_mapping'], $config['commands']);

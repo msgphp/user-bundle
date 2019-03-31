@@ -28,7 +28,7 @@ return function (ContainerConfigurator $container): void {
             ->arg('$encoder', ref('.msgphp_user.security.password_hashing'))
         ->alias(PasswordHashing::class, Security\PasswordHashing::class)
 
-        ->set(Security\SecurityUserProvider::class)
+        ->set(Security\UserIdentityProvider::class)
         ->set(Security\UserArgumentValueResolver::class)
             ->tag('controller.argument_value_resolver')
     ;
@@ -40,6 +40,6 @@ return function (ContainerConfigurator $container): void {
     }
 
     if (interface_exists(PayloadAwareUserProviderInterface::class)) {
-        $services->set(Security\Jwt\SecurityUserProvider::class);
+        $services->set(Security\Jwt\UserIdentityProvider::class);
     }
 };

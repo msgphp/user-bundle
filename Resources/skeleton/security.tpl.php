@@ -4,8 +4,7 @@ security:
         MsgPhp\User\Infrastructure\Security\UserIdentity: <?= $password_algorithm."\n" ?>
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
-        in_memory: { memory: ~ }
-        msgphp_user: { id: MsgPhp\User\Infrastructure\Security\SecurityUserProvider }
+        msgphp_user: { id: MsgPhp\User\Infrastructure\Security\UserIdentityProvider }
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/

@@ -34,7 +34,7 @@ final class RegisterController
             $bus->dispatch(new CreateUser($form->getData()));
             $flashBag->add('success', 'You\'re successfully registered.');
 
-            return new RedirectResponse('<?= $has_login ? '/login' : '/' ?>');
+            return new RedirectResponse('<?= $controllers['login'] ? '/login' : '/' ?>');
         }
 
         return new Response($twig->render('<?= $template_dir ?>register.html.twig', [

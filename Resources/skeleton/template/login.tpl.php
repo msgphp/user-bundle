@@ -10,7 +10,7 @@
 
         <div>
             <input type="submit" value="Login" />
-<?php if ($has_forgot_password): ?>
+<?php if ($controllers['forgot_password']): ?>
             <p><a href="{{ url('forgot_password') }}">Forgot password?</a></p>
 <?php endif; ?>
         </div>

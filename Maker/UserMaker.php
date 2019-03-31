@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\Maker;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MsgPhp\Domain\Event\DomainEventHandler;
 use MsgPhp\Domain\Event\DomainEventHandlerTrait;
+use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
 use MsgPhp\Domain\Infrastructure\Doctrine\MappingConfig;
 use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\Credential\Credential;
@@ -19,7 +19,6 @@ use MsgPhp\User\User;
 use MsgPhp\User\UserRole;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use SebastianBergmann\Diff\Differ;
-use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use Symfony\Bundle\MakerBundle\ConsoleStyle;
 use Symfony\Bundle\MakerBundle\DependencyBuilder;
 use Symfony\Bundle\MakerBundle\Generator;
@@ -27,12 +26,7 @@ use Symfony\Bundle\MakerBundle\InputConfiguration;
 use Symfony\Bundle\MakerBundle\MakerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Form\FormInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Routing\Route;
-use Symfony\Component\Security\Core\Security;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Twig\Environment;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -54,12 +48,18 @@ final class UserMaker implements MakerInterface
     private $interactive = false;
 
     /**
+     * @var KernelInterface
+     */
+    private $kernel;
+
+    /**
      * @var \ReflectionClass
      */
     private $user;
 
-    public function __construct(array $classMapping, string $projectDir, MappingConfig $mappingConfig)
+    public function __construct(KernelInterface $kernel, array $classMapping, string $projectDir, MappingConfig $mappingConfig)
     {
+        $this->kernel = $kernel;
         $this->classMapping = $classMapping;
         $this->projectDir = $projectDir;
         $this->mappingConfig = $mappingConfig;
@@ -90,34 +90,16 @@ final class UserMaker implements MakerInterface
         $this->configs = $this->services = $this->routes = $this->writes = [];
         $this->interactive = $input->isInteractive();
 
-        if (!isset($this->classMapping[User::class]) || !isset($this->classMapping[Credential::class])) {
-            throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
+        if (!$this->applicationPrerequisitesMet($io)) {
+            return;
         }
 
         $this->user = new \ReflectionClass($this->classMapping[User::class]);
         $this->credential = $this->classMapping[Credential::class];
 
-        $continue = true;
-        if (!class_exists(Differ::class)) {
-            $io->note(['It\'s recommended to (temporarily) enable the Diff implementation for better reviewing changes, run:', 'composer require --dev sebastian/diff']);
-            $continue = false;
-        }
-        if (!interface_exists(EntityManagerInterface::class)) {
-            $io->note(['It\'s recommended to enable Doctrine ORM, run:', 'composer require orm']);
-            $continue = false;
-        }
-        if (!interface_exists(MessageBusInterface::class)) {
-            $io->note(['It\'s recommended to enable Symfony Messenger, run:', 'composer require messenger']);
-            $continue = false;
-        }
-        if (!$continue && !$io->confirm('Continue anyway?', false)) {
-            return;
-        }
-
         if ($io->confirm('Enable Symfony Messenger configuration (recommended)? (config/packages/messenger.yaml)')) {
             $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', $this->getSkeleton('messenger.tpl.php')];
         }
-
         $this->generateUser($io);
         $this->generateControllers($io);
         $this->generateConsole($io);
@@ -129,14 +111,12 @@ final class UserMaker implements MakerInterface
             ])]);
             $this->configs = $this->services = [];
         }
-
         if ($this->routes) {
             array_unshift($this->writes, [$this->projectDir.'/config/routes/user.php', $this->getSkeleton('routes.tpl.php', [
                 'routes' => $this->routes,
             ])]);
             $this->routes = [];
         }
-
         if (!$this->writes) {
             return;
         }
@@ -201,6 +181,68 @@ final class UserMaker implements MakerInterface
             sort($written);
             $io->listing($written);
         }
+    }
+
+    private static function getConstructorSignature(\ReflectionClass $class): string
+    {
+        if (null === $constructor = $class->getConstructor()) {
+            return '';
+        }
+
+        $lines = file($class->getFileName());
+        $offset = $constructor->getStartLine() - 1;
+        $body = implode('', \array_slice($lines, $offset, $constructor->getEndLine() - $offset));
+
+        if (preg_match('~^[^_]*+__construct\(([^)]++)\)~i', $body, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
+    }
+
+    private static function getSignatureVariables(string $signature): string
+    {
+        preg_match_all('~(?:\.{3})?\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*~', $signature, $matches);
+
+        return isset($matches[0][0]) ? implode(', ', $matches[0]) : '';
+    }
+
+    private static function splitClass(string $class): array
+    {
+        $ns = 'App';
+
+        if (false !== $i = strrpos($class, '\\')) {
+            $ns = substr($class, 0, $i);
+            $class = substr($class, $i + 1);
+        }
+
+        return [$ns, $class];
+    }
+
+    private function applicationPrerequisitesMet(ConsoleStyle $io): bool
+    {
+        if (!isset($this->classMapping[User::class]) || !isset($this->classMapping[Credential::class])) {
+            throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
+        }
+        if (null === $container = $this->kernel->getContainer()) {
+            throw new \RuntimeException('Kernel is shutdown.');
+        }
+
+        $met = true;
+        if (!class_exists(Differ::class)) {
+            $io->note(['It\'s recommended to (temporarily) enable the Diff implementation for better reviewing changes, run:', 'composer require --dev sebastian/diff']);
+            $met = false;
+        }
+        if (!FeatureDetection::isDoctrineOrmAvailable($container)) {
+            $io->note(['It\'s recommended to enable Doctrine ORM, run:', 'composer require orm']);
+            $met = false;
+        }
+        if (!FeatureDetection::isMessengerAvailable($container)) {
+            $io->note(['It\'s recommended to enable Symfony Messenger, run:', 'composer require messenger']);
+            $met = false;
+        }
+
+        return $met || $io->confirm('Continue anyway?', false);
     }
 
     private function generateUser(ConsoleStyle $io): void
@@ -452,25 +494,53 @@ PHP
         }
     }
 
-    private function generateControllers(ConsoleStyle $io): void
+    private function controllerPrerequisitesMet(ConsoleStyle $io, ?array &$controllers): bool
     {
-        if (!$this->credential || !$io->confirm('Generate controllers?')) {
-            return;
+        $controllers = [];
+
+        if (!$io->confirm('Generate controllers?')) {
+            return false;
         }
 
-        if (
-            !class_exists(AnnotatedRouteControllerLoader::class) ||
-            !class_exists(Route::class) ||
-            !interface_exists(FormInterface::class) ||
-            !interface_exists(ValidatorInterface::class) ||
-            !class_exists(Environment::class) ||
-            !interface_exists(MessageBusInterface::class)
-        ) {
-            $io->warning(['Not all controller dependencies are met, run:', 'composer require annotations router form validator twig messenger']);
+        $controllers = [
+            'registration' => $this->hasUsername() && $io->confirm('Add a registration controller?'),
+            'login' => $this->hasUsername() && $this->hasPassword() && $io->confirm('Add a login and profile controller?'),
+            'forgot_password' => $this->hasUsername() && $this->passwordReset && $io->confirm('Add a forgot and reset password controller?'),
+        ];
 
-            if (!$io->confirm('Continue anyway?', false)) {
-                return;
-            }
+        if (!array_filter($controllers)) {
+            return false;
+        }
+
+        if (null === $container = $this->kernel->getContainer()) {
+            throw new \RuntimeException('Kernel is shutdown.');
+        }
+
+        $prerequisites = [
+            'annotation' => FeatureDetection::hasSensioFrameworkExtraBundle($container),
+            'twig' => FeatureDetection::hasTwigBundle($container),
+            'router' => FeatureDetection::isRouterAvailable($container),
+            'form' => FeatureDetection::isFormAvailable($container),
+            'validator' => FeatureDetection::isValidatorAvailable($container),
+            'messenger' => FeatureDetection::isMessengerAvailable($container),
+        ];
+        if ($controllers['login']) {
+            $prerequisites['security'] = FeatureDetection::hasSecurityBundle($container);
+        }
+
+        if (\in_array(false, $prerequisites, true)) {
+            $io->warning(['Not all controller dependencies are met, run:', 'composer require '.implode(' ', array_keys($prerequisites))]);
+
+            return $io->confirm('Continue anyway?', false);
+        }
+
+        return true;
+    }
+
+    private function generateControllers(ConsoleStyle $io): void
+    {
+        if (!$this->controllerPrerequisitesMet($io, $controllers)) {
+            return;
         }
 
         $formNs = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
@@ -478,9 +548,6 @@ PHP
         $templateDir = trim($io->ask('Provide the base template directory', 'user/'), '/');
         $baseTemplate = ltrim($io->ask('Provide the base template file', 'base.html.twig'), '/');
         $baseTemplateBlock = $io->ask('Provide the base template block name', 'body');
-        $hasRegistration = $this->hasUsername() && $io->confirm('Add a registration controller?');
-        $hasLogin = $this->hasUsername() && $this->hasPassword() && $io->confirm('Add a login and profile controller?');
-        $hasForgotPassword = $this->hasUsername() && $this->passwordReset && $io->confirm('Add a forgot and reset password controller?');
 
         if ('' !== $templateDir) {
             $templateDir .= '/';
@@ -492,20 +559,16 @@ PHP
             'template_dir' => $templateDir,
             'base_template' => $baseTemplate,
             'base_template_block' => $baseTemplateBlock,
-            'has_registration' => $hasRegistration,
-            'has_login' => $hasLogin,
-            'has_forgot_password' => $hasForgotPassword,
+            'controllers' => $controllers,
         ];
 
-        if ($hasLogin) {
-            if (!class_exists(Security::class)) {
-                $io->warning(['Not all controller dependencies are met, run:', 'composer require security']);
+        if ($controllers['registration']) {
+            $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.tpl.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($controllerNs.'\\RegisterController'), $this->getSkeleton('controller/RegisterController.tpl.php', $vars)];
+            $this->writes[] = [$this->getTemplateFileName($templateDir.'register.html.twig'), $this->getSkeleton('template/register.tpl.php', $vars)];
+        }
 
-                if (!$io->confirm('Continue anyway?', false)) {
-                    return;
-                }
-            }
-
+        if ($controllers['login']) {
             $this->routes[] = <<<'PHP'
 ->add('logout', '/logout')
 PHP;
@@ -519,13 +582,7 @@ PHP;
             $this->writes[] = [$this->getTemplateFileName($templateDir.'profile.html.twig'), $this->getSkeleton('template/profile.tpl.php', $vars)];
         }
 
-        if ($hasRegistration) {
-            $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.tpl.php', $vars)];
-            $this->writes[] = [$this->getClassFileName($controllerNs.'\\RegisterController'), $this->getSkeleton('controller/RegisterController.tpl.php', $vars)];
-            $this->writes[] = [$this->getTemplateFileName($templateDir.'register.html.twig'), $this->getSkeleton('template/register.tpl.php', $vars)];
-        }
-
-        if ($hasForgotPassword) {
+        if ($controllers['forgot_password']) {
             $this->writes[] = [$this->getClassFileName($formNs.'\\ForgotPasswordType'), $this->getSkeleton('form/ForgotPasswordType.tpl.php', $vars)];
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\ResetPasswordController'), $this->getSkeleton('controller/ResetPasswordController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'forgot_password.html.twig'), $this->getSkeleton('template/forgot_password.tpl.php', $vars)];
@@ -545,30 +602,6 @@ PHP;
 PHP;
     }
 
-    private static function getConstructorSignature(\ReflectionClass $class): string
-    {
-        if (null === $constructor = $class->getConstructor()) {
-            return '';
-        }
-
-        $lines = file($class->getFileName());
-        $offset = $constructor->getStartLine() - 1;
-        $body = implode('', \array_slice($lines, $offset, $constructor->getEndLine() - $offset));
-
-        if (preg_match('~^[^_]*+__construct\(([^)]++)\)~i', $body, $matches)) {
-            return $matches[1];
-        }
-
-        return '';
-    }
-
-    private static function getSignatureVariables(string $signature): string
-    {
-        preg_match_all('~(?:\.{3})?\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*~', $signature, $matches);
-
-        return isset($matches[0][0]) ? implode(', ', $matches[0]) : '';
-    }
-
     private function getSkeleton(string $path, array $vars = []): string
     {
         return (function () use ($path, $vars): string {
@@ -579,18 +612,6 @@ PHP;
 
             return ob_get_clean();
         })();
-    }
-
-    private static function splitClass(string $class): array
-    {
-        $ns = 'App';
-
-        if (false !== $i = strrpos($class, '\\')) {
-            $ns = substr($class, 0, $i);
-            $class = substr($class, $i + 1);
-        }
-
-        return [$ns, $class];
     }
 
     private function getTemplateFileName(string $path): string

@@ -39,6 +39,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 final class Configuration implements ConfigurationInterface
 {
     public const PACKAGE_NS = 'MsgPhp\\User\\';
+    public const DEFAULT_ROLE = 'ROLE_USER';
     public const DOCTRINE_TYPE_MAPPING = [
         UserId::class => DoctrineInfrastructure\Type\UserIdType::class,
     ];
@@ -111,7 +112,6 @@ final class Configuration implements ConfigurationInterface
             Command\DeleteUserRole::class,
         ],
     ];
-    private const DEFAULT_ROLE = 'ROLE_USER';
 
     /**
      * @var PackageMetadata|null

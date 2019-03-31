@@ -46,6 +46,7 @@ final class UserMaker implements MakerInterface
     private $mappingConfig;
     private $credential;
     private $passwordReset = false;
+    private $defaultRole;
     private $configs = [];
     private $services = [];
     private $routes = [];
@@ -85,6 +86,7 @@ final class UserMaker implements MakerInterface
     {
         $this->credential = $this->user = null;
         $this->passwordReset = false;
+        $this->defaultRole = Configuration::DEFAULT_ROLE;
         $this->configs = $this->services = $this->routes = $this->writes = [];
         $this->interactive = $input->isInteractive();
 
@@ -404,29 +406,11 @@ PHP
             }
         }
 
-        $defaultRoles = [];
         do {
-            do {
-                $defaultRole = $io->ask('Provide a default user role (e.g. <comment>ROLE_USER</>)');
-            } while (null === $defaultRole && $this->interactive);
-            $defaultRoles[] = $defaultRole;
-        } while ($io->confirm('Add another default user role?', false));
+            $this->defaultRole = $io->ask('Provide a default user role', $this->defaultRole);
+        } while (null === $this->defaultRole && $this->interactive);
 
-        $this->configs[] = ['role_providers' => ['default' => $defaultRoles] + $roleProviders];
-
-//        if (!isset($traits[Features\CanBeEnabled::class]) && $io->confirm('Can users be enabled / disabled?')) {
-//            $implementors[] = DomainEventHandlerInterface::class;
-//            $addUses[Features\CanBeEnabled::class] = true;
-//            $addTraitUses['CanBeEnabled'] = true;
-//            $enableEventHandler();
-//        }
-//
-//        if (!isset($traits[Features\CanBeConfirmed::class]) && $io->confirm('Can users be confirmed?')) {
-//            $implementors[] = DomainEventHandlerInterface::class;
-//            $addUses[Features\CanBeConfirmed::class] = true;
-//            $addTraitUses['CanBeConfirmed'] = true;
-//            $enableEventHandler();
-//        }
+        $this->configs[] = ['role_providers' => ['default' => [$this->defaultRole]] + $roleProviders];
 
         if ($numUses = \count($addUses)) {
             ksort($addUses);
@@ -527,7 +511,7 @@ PHP
 PHP;
             $this->writes[] = [$this->projectDir.'/config/packages/security.yaml', $this->getSkeleton('security.tpl.php')];
 
-            $this->writes[] = [$this->getClassFileName($formNs.'\\LoginType'), $this->getSkeleton('form/LoginType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($formNs.'\\LoginType'), $this->getSkeleton('form/LoginType.tpl.php', $vars)];
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\LoginController'), $this->getSkeleton('controller/LoginController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'login.html.twig'), $this->getSkeleton('template/login.tpl.php', $vars)];
 
@@ -536,17 +520,17 @@ PHP;
         }
 
         if ($hasRegistration) {
-            $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.tpl.php', $vars)];
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\RegisterController'), $this->getSkeleton('controller/RegisterController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'register.html.twig'), $this->getSkeleton('template/register.tpl.php', $vars)];
         }
 
         if ($hasForgotPassword) {
-            $this->writes[] = [$this->getClassFileName($formNs.'\\ForgotPasswordType'), $this->getSkeleton('form/ForgotPasswordType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($formNs.'\\ForgotPasswordType'), $this->getSkeleton('form/ForgotPasswordType.tpl.php', $vars)];
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\ResetPasswordController'), $this->getSkeleton('controller/ResetPasswordController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'forgot_password.html.twig'), $this->getSkeleton('template/forgot_password.tpl.php', $vars)];
 
-            $this->writes[] = [$this->getClassFileName($formNs.'\\ResetPasswordType'), $this->getSkeleton('form/ResetPasswordType.php', $vars)];
+            $this->writes[] = [$this->getClassFileName($formNs.'\\ResetPasswordType'), $this->getSkeleton('form/ResetPasswordType.tpl.php', $vars)];
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\ForgotPasswordController'), $this->getSkeleton('controller/ForgotPasswordController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'reset_password.html.twig'), $this->getSkeleton('template/reset_password.tpl.php', $vars)];
         }
@@ -628,6 +612,7 @@ PHP;
             'has_password' => $hasPassword = is_subclass_of($this->credential, PasswordProtectedCredential::class),
             'password_field' => $hasPassword ? $this->credential::getPasswordField() : null,
             'password_algorithm' => \PASSWORD_DEFAULT === (\defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2) ? 'argon2i' : 'bcrypt',
+            'default_role' => $this->defaultRole,
         ];
     }
 

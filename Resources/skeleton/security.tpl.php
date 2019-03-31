@@ -25,7 +25,7 @@ security:
                 check_path: /login
                 default_target_path: /profile
                 username_parameter: <?= $username_field."\n" ?>
-                password_parameter: <?= $password_field ?>
+                password_parameter: <?= $password_field."\n" ?>
 
             logout:
                 path: logout
@@ -34,4 +34,4 @@ security:
     # Note: Only the *first* access control that matches will be used
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/profile, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/profile, roles: <?= $default_role ?> }

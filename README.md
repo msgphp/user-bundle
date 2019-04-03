@@ -31,7 +31,6 @@ return function (ContainerConfigurator $container) {
 ## Feeling Lazy?
 
 ```bash
-composer require annot form validator twig security messenger orm
 composer require maker --dev
 bin/console make:user:msgphp
 ```

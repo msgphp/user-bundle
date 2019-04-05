@@ -126,7 +126,7 @@ final class UserMaker implements MakerInterface
 
         $review = $io->confirm('Review changes? All changes will be written otherwise!');
         $written = [];
-        $writer = function (string $file, string $contents) use ($io, &$written): void {
+        $writer = static function (string $file, string $contents) use ($io, &$written): void {
             if (!file_put_contents($file, $contents)) {
                 $io->error('Cannot write changes to '.$file);
 
@@ -341,7 +341,7 @@ final class UserMaker implements MakerInterface
         $nl = $nl ?? \PHP_EOL;
         $addUses = $addTraitUses = $addImplementors = [];
         $write = false;
-        $enableEventHandler = function () use ($implementors, $traits, &$addUses, &$addImplementors, &$addTraitUses): void {
+        $enableEventHandler = static function () use ($implementors, $traits, &$addUses, &$addImplementors, &$addTraitUses): void {
             if (!isset($implementors[DomainEventHandler::class])) {
                 $addUses[DomainEventHandler::class] = true;
                 $addImplementors['DomainEventHandler'] = true;
@@ -380,7 +380,7 @@ final class UserMaker implements MakerInterface
                 $offset = $constructor->getStartLine() - 1;
                 $length = $constructor->getEndLine() - $offset;
                 $contents = preg_replace_callback_array([
-                    '~^[^_]*+__construct\([^)]*+\)~i' => function (array $match) use ($credentialSignature): string {
+                    '~^[^_]*+__construct\([^)]*+\)~i' => static function (array $match) use ($credentialSignature): string {
                         $signature = substr($match[0], 0, -1);
                         if ('' !== $credentialSignature) {
                             $signature .= ('(' !== substr(rtrim($signature), -1) ? ', ' : '').$credentialSignature;
@@ -388,7 +388,7 @@ final class UserMaker implements MakerInterface
 
                         return $signature.')';
                     },
-                    '~\s*+}\s*+$~s' => function ($match) use ($nl, $indent, $credential, $credentialInit): string {
+                    '~\s*+}\s*+$~s' => static function ($match) use ($nl, $indent, $credential, $credentialInit): string {
                         $indent = ltrim(substr($match[0], 0, strpos($match[0], '}')), "\r\n").'    ';
 
                         return $nl.$indent.$credentialInit.$match[0];
@@ -403,7 +403,7 @@ final class UserMaker implements MakerInterface
                     }
                 }
             } else {
-                $constructor = array_map(function (string $line) use ($nl, $indent): string {
+                $constructor = array_map(static function (string $line) use ($nl, $indent): string {
                     return $indent.$line.$nl;
                 }, explode("\n", <<<PHP
 public function __construct(${credentialSignature})
@@ -456,7 +456,7 @@ PHP
 
         if ($numUses = \count($addUses)) {
             ksort($addUses);
-            $uses = array_map(function (string $use) use ($nl): string {
+            $uses = array_map(static function (string $use) use ($nl): string {
                 return 'use '.$use.';'.$nl;
             }, array_keys($addUses));
             if (!$hasUses) {
@@ -472,7 +472,7 @@ PHP
 
         if ($numTraitUses = \count($addTraitUses)) {
             ksort($addTraitUses);
-            $traitUses = array_map(function (string $use) use ($nl, $indent): string {
+            $traitUses = array_map(static function (string $use) use ($nl, $indent): string {
                 return $indent.'use '.$use.';'.$nl;
             }, array_keys($addTraitUses));
             if (!$hasTraitUses) {

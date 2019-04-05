@@ -170,7 +170,7 @@ final class Configuration implements ConfigurationInterface
                             ->isRequired()
                             ->cannotBeEmpty()
                             ->validate()
-                                ->ifTrue(function ($value): bool {
+                                ->ifTrue(static function ($value): bool {
                                     return !class_exists($value);
                                 })
                                 ->thenInvalid('Target class %s does not exists.')
@@ -181,7 +181,7 @@ final class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->validate()
-                    ->always(function (array $value): array {
+                    ->always(static function (array $value): array {
                         $result = [];
                         foreach ($value as $lookup) {
                             ['target' => $target, 'field' => $field, 'mapped_by' => $mappedBy] = $lookup;
@@ -203,7 +203,7 @@ final class Configuration implements ConfigurationInterface
                 ->defaultValue(['default' => [self::DEFAULT_ROLE]])
                 ->requiresAtLeastOneElement()
                 ->beforeNormalization()
-                    ->always(function ($value) {
+                    ->always(static function ($value) {
                         if (\is_array($value)) {
                             if (!isset($value['default'])) {
                                 $value['default'] = [self::DEFAULT_ROLE];
@@ -218,7 +218,7 @@ final class Configuration implements ConfigurationInterface
                     })
                 ->end()
                 ->validate()
-                    ->always(function (array $value): array {
+                    ->always(static function (array $value): array {
                         foreach ($value as $k => $v) {
                             if ('default' !== $k && !\is_string($v)) {
                                 throw new \LogicException('Role provider must be of type string, got "'.\gettype($v).'".');
@@ -241,7 +241,7 @@ final class Configuration implements ConfigurationInterface
             ->always(ConfigHelper::defaultBundleConfig(self::ID_TYPE_MAPPING))
         ->end()
         ->validate()
-            ->always(function (array $config): array {
+            ->always(static function (array $config): array {
                 $userClass = $config['class_mapping'][User::class];
                 $credentialClass = $config['class_mapping'][Credential::class] ?? ($config['class_mapping'][Credential::class] = self::guessUserCredential($userClass));
 

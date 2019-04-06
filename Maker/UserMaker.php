@@ -72,6 +72,7 @@ final class UserMaker implements MakerInterface
 
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
     {
+        $command->setDescription('Configures user management');
     }
 
     public function configureDependencies(DependencyBuilder $dependencies): void

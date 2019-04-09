@@ -5,8 +5,7 @@
 
     {{ form_start(form) }}
         {{ form_errors(form) }}
-        {{ form_row(form.<?= $password_field ?>.plain) }}
-        {{ form_row(form.<?= $password_field ?>.confirmation) }}
+        {{ form_row(form.<?= $password_field ?>) }}
 
         <div>
             <input type="submit" value="Reset your password" />

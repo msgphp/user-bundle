@@ -143,7 +143,6 @@ final class Configuration implements ConfigurationInterface
         $children
             ->classMappingNode('class_mapping')
                 ->requireClasses([User::class])
-                ->disallowClasses([Credential::class])
                 ->groupClasses([Role::class, UserRole::class])
                 ->subClassValues()
                 ->hint(UserAttributeValue::class, 'Try running "composer require msgphp/user-eav msgphp/eav-bundle".')

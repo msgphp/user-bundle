@@ -4,11 +4,10 @@
     <h1>Register</h1>
 
     {{ form_start(form) }}
-        {{ form_errors(form) }}s
+        {{ form_errors(form) }}
         {{ form_row(form.<?= $username_field ?>) }}
 <?php if ($has_password): ?>
-        {{ form_row(form.<?= $password_field ?>.plain) }}
-        {{ form_row(form.<?= $password_field ?>.confirmation) }}
+        {{ form_row(form.<?= $password_field ?>) }}
 <?php endif; ?>
 
         <div>

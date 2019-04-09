@@ -579,6 +579,10 @@ PHP;
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\LoginController'), $this->getSkeleton('controller/LoginController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'login.html.twig'), $this->getSkeleton('template/login.tpl.php', $vars)];
 
+            $this->writes[] = [$this->getClassFileName($formNs.'\\Change'.ucfirst($this->credential::getUsernameField()).'Type'), $this->getSkeleton('form/ChangeUsernameType.tpl.php', $vars)];
+            if ($this->hasPassword()) {
+                $this->writes[] = [$this->getClassFileName($formNs.'\\ChangePasswordType'), $this->getSkeleton('form/ChangePasswordType.tpl.php', $vars)];
+            }
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\ProfileController'), $this->getSkeleton('controller/ProfileController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'profile.html.twig'), $this->getSkeleton('template/profile.tpl.php', $vars)];
         }
@@ -629,9 +633,9 @@ PHP;
             'user_short_class' => $this->user->getShortName(),
             'credential_class' => $this->credential,
             'credential_short_class' => self::splitClass($this->credential)[1],
-            'has_username' => $hasUsername = is_subclass_of($this->credential, UsernameCredential::class),
+            'has_username' => $hasUsername = $this->hasUsername(),
             'username_field' => $hasUsername ? $this->credential::getUsernameField() : null,
-            'has_password' => $hasPassword = is_subclass_of($this->credential, PasswordProtectedCredential::class),
+            'has_password' => $hasPassword = $this->hasPassword(),
             'password_field' => $hasPassword ? $this->credential::getPasswordField() : null,
             'password_algorithm' => \PASSWORD_DEFAULT === (\defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2) ? 'argon2i' : 'bcrypt',
             'default_role' => $this->defaultRole,

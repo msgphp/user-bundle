@@ -182,15 +182,18 @@ final class Configuration implements ConfigurationInterface
                 ->validate()
                     ->always(static function (array $value): array {
                         $result = [];
+                        /** @var array<string|null> $lookup */
                         foreach ($value as $lookup) {
                             ['target' => $target, 'field' => $field, 'mapped_by' => $mappedBy] = $lookup;
-                            if (Username::class === $target || is_subclass_of($target, Username::class)) {
+                            if (null === $target || Username::class === $target || is_subclass_of($target, Username::class)) {
+                                /** @psalm-suppress PossiblyNullOperand */
                                 throw new \LogicException('Lookup target "'.$target.'" is not applicable and should be removed.');
                             }
                             if (null === $mappedBy && !is_subclass_of($target, User::class)) {
                                 throw new \LogicException('Lookup for target "'.$target.'" must be a sub class of "'.User::class.'" or specify the "mapped_by" node.');
                             }
 
+                            /** @psalm-suppress PossiblyNullArrayOffset */
                             $result[$target][$field] = $mappedBy;
                         }
 

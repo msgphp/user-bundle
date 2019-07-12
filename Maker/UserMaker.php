@@ -35,6 +35,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 final class UserMaker implements MakerInterface
 {
+    private $kernel;
     private $classMapping;
     private $projectDir;
     private $mappingConfig;
@@ -47,14 +48,7 @@ final class UserMaker implements MakerInterface
     private $writes = [];
     private $interactive = false;
 
-    /**
-     * @var KernelInterface
-     */
-    private $kernel;
-
-    /**
-     * @var \ReflectionClass
-     */
+    /** @var \ReflectionClass */
     private $user;
 
     public function __construct(KernelInterface $kernel, array $classMapping, string $projectDir, MappingConfig $mappingConfig)

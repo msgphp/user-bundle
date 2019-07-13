@@ -401,9 +401,9 @@ final class UserMaker implements MakerInterface
                 $constructor = array_map(static function (string $line) use ($nl, $indent): string {
                     return $indent.$line.$nl;
                 }, explode("\n", <<<PHP
-public function __construct(${credentialSignature})
+public function __construct({$credentialSignature})
 {
-    ${credentialInit}
+    {$credentialInit}
 }
 PHP
                 ));

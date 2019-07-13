@@ -11,13 +11,9 @@ framework:
 
         default_bus: command_bus
         buses:
-            command_bus:
-                middleware:
-                    - msgphp.messenger.console_message_receiver
+            command_bus: ~
             event_bus:
                 default_middleware: allow_no_handlers
-                middleware:
-                    - msgphp.messenger.console_message_receiver
 
 services:
     msgphp.messenger.command_bus: '@command_bus'

@@ -32,9 +32,14 @@ final class ForgotPasswordController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var <?= $user_short_class ?> $user */
-            $user = $form->getData()['user'];
-            $bus->dispatch(new RequestUserPassword($user->getId()));
+            $data = $form->getData();
+
+            if (isset($data['user'])) {
+                /** @var <?= $user_short_class ?> $user */
+                $user = $data['user'];
+                $bus->dispatch(new RequestUserPassword($user->getId()));
+            }
+
             $flashBag->add('success', 'You\'re password is requested.');
 
             return new RedirectResponse('/login');

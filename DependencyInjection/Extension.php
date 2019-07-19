@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MsgPhp\UserBundle\DependencyInjection;
 
-use MsgPhp\Domain\Infrastructure\Console\Context\ClassContextFactory as ConsoleClassContextFactory;
+use MsgPhp\Domain\Infrastructure\Console\Definition\ClassContextDefinition as ConsoleClassContextDefinition;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\ContainerHelper;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\ExtensionHelper;
 use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
@@ -159,7 +159,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader->load('console.php');
 
         $container->getDefinition(ConsoleInfrastructure\Command\CreateUserCommand::class)
-            ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+            ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
                 $container,
                 $config['class_mapping'][User::class]
             ))
@@ -167,7 +167,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (isset($config['class_mapping'][Role::class])) {
             $container->getDefinition(ConsoleInfrastructure\Command\CreateRoleCommand::class)
-                ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
                     $container,
                     $config['class_mapping'][Role::class]
                 ))
@@ -176,20 +176,20 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (isset($config['class_mapping'][UserRole::class])) {
             $container->getDefinition(ConsoleInfrastructure\Command\AddUserRoleCommand::class)
-                ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
                     $container,
                     $config['class_mapping'][UserRole::class],
-                    ConsoleClassContextFactory::REUSE_DEFINITION
+                    ConsoleClassContextDefinition::REUSE_DEFINITION
                 ))
             ;
         }
 
         if (isset($config['username_field'])) {
             $container->getDefinition(ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class)
-                ->setArgument('$contextFactory', ExtensionHelper::registerConsoleClassContextFactory(
+                ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
                     $container,
                     $config['class_mapping'][Credential::class],
-                    ConsoleClassContextFactory::ALWAYS_OPTIONAL | ConsoleClassContextFactory::NO_DEFAULTS
+                    ConsoleClassContextDefinition::ALWAYS_OPTIONAL | ConsoleClassContextDefinition::NO_DEFAULTS
                 ))
             ;
         }

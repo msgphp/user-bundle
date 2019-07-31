@@ -27,6 +27,7 @@ use Symfony\Bundle\MakerBundle\MakerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Security\Core\Encoder\SodiumPasswordEncoder;
 
 /**
  * @author Roland Franssen <franssen.roland@gmail.com>
@@ -238,6 +239,16 @@ final class UserMaker implements MakerInterface
         }
 
         return $met || $io->confirm('Continue anyway?', false);
+    }
+
+    private static function getHashing(): string
+    {
+        // Symfony 4.3
+        if (class_exists(SodiumPasswordEncoder::class)) {
+            return 'auto';
+        }
+
+        return 'argon2i';
     }
 
     private function generateUser(ConsoleStyle $io): void
@@ -631,7 +642,7 @@ PHP;
             'username_field' => $hasUsername ? $this->credential::getUsernameField() : null,
             'has_password' => $hasPassword = $this->hasPassword(),
             'password_field' => $hasPassword ? $this->credential::getPasswordField() : null,
-            'password_algorithm' => \PASSWORD_DEFAULT === (\defined('PASSWORD_ARGON2I') ? \PASSWORD_ARGON2I : 2) ? 'argon2i' : 'bcrypt',
+            'hashing' => self::getHashing(),
             'default_role' => $this->defaultRole,
         ];
     }

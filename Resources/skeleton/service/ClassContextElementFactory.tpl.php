@@ -9,7 +9,7 @@ use <?= $credential_class ?>;
 use MsgPhp\Domain\Infrastructure\Console\Context\ClassContextElementFactory as BaseClassContextElementFactory;
 use MsgPhp\Domain\Infrastructure\Console\Context\ContextElement;
 <?php if ($has_password): ?>
-use MsgPhp\User\Password\PasswordHashing;
+use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 <?php endif; ?>
 
 final class ClassContextElementFactory implements BaseClassContextElementFactory
@@ -17,7 +17,7 @@ final class ClassContextElementFactory implements BaseClassContextElementFactory
 <?php if ($has_password): ?>
     private $passwordHashing;
 
-    public function __construct(PasswordHashing $passwordHashing)
+    public function __construct(PasswordEncoderInterface $passwordHashing)
     {
         $this->passwordHashing = $passwordHashing;
     }
@@ -37,7 +37,7 @@ final class ClassContextElementFactory implements BaseClassContextElementFactory
                             return bin2hex(random_bytes(8));
                         })
                         ->normalizer(function (string $value): string {
-                            return $this->passwordHashing->hash($value);
+                            return $this->passwordHashing->encodePassword($value, null);
                         })
                     ;
                 }

@@ -1,7 +1,7 @@
 # see https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml
 security:
     encoders:
-        MsgPhp\User\Infrastructure\Security\UserIdentity: <?= $password_algorithm."\n" ?>
+        MsgPhp\User\Infrastructure\Security\UserIdentity: <?= $hashing."\n" ?>
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
         msgphp_user: { id: MsgPhp\User\Infrastructure\Security\UserIdentityProvider }

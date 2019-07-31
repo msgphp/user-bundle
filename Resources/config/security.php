@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\PayloadAwareUserProviderInterface;
 use MsgPhp\User\Infrastructure\Security;
-use MsgPhp\User\Password\PasswordHashing;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
@@ -16,17 +15,9 @@ return static function (ContainerConfigurator $container): void {
             ->autowire()
             ->private()
 
-        ->set(Security\HashingFactory::class)
-            ->decorate('security.encoder_factory')
-
-        ->set('.msgphp_user.security.password_hashing', PasswordEncoderInterface::class)
+        ->set(PasswordEncoderInterface::class)
             ->factory([ref('security.encoder_factory'), 'getEncoder'])
             ->args([Security\UserIdentity::class])
-        ->alias(PasswordEncoderInterface::class, '.msgphp_user.security.password_hashing')
-
-        ->set(Security\PasswordHashing::class)
-            ->arg('$encoder', ref('.msgphp_user.security.password_hashing'))
-        ->alias(PasswordHashing::class, Security\PasswordHashing::class)
 
         ->set(Security\UserIdentityProvider::class)
         ->set(Security\UserArgumentValueResolver::class)

@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use MsgPhp\User\Password\GenericPasswordHashing;
-use MsgPhp\User\Password\PasswordHashing;
 use MsgPhp\User\Role\ChainRoleProvider;
 use MsgPhp\User\Role\RoleProvider;
 use MsgPhp\UserBundle\Maker;
@@ -16,9 +14,6 @@ return static function (ContainerConfigurator $container): void {
             ->autowire()
             ->autoconfigure()
             ->private()
-
-        ->set(GenericPasswordHashing::class)
-        ->alias(PasswordHashing::class, GenericPasswordHashing::class)
 
         ->set(ChainRoleProvider::class)
         ->alias(RoleProvider::class, ChainRoleProvider::class)

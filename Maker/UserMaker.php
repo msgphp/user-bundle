@@ -26,6 +26,7 @@ use Symfony\Bundle\MakerBundle\InputConfiguration;
 use Symfony\Bundle\MakerBundle\MakerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Security\Core\Encoder\SodiumPasswordEncoder;
 
@@ -67,7 +68,10 @@ final class UserMaker implements MakerInterface
 
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
     {
-        $command->setDescription('Configures user management');
+        $command
+            ->setDescription('Configures user management')
+            ->addOption('no-review', null, InputOption::VALUE_NONE, 'Skip file reviewing (use e.g. GIT instead)')
+        ;
     }
 
     public function configureDependencies(DependencyBuilder $dependencies): void
@@ -86,7 +90,7 @@ final class UserMaker implements MakerInterface
         $this->configs = $this->services = $this->routes = $this->writes = [];
         $this->interactive = $input->isInteractive();
 
-        if (!$this->applicationPrerequisitesMet($io)) {
+        if (!$this->applicationPrerequisitesMet($io, $input)) {
             return;
         }
 
@@ -120,7 +124,7 @@ final class UserMaker implements MakerInterface
         $io->success('All questions have been answered!');
         $io->note(\count($this->writes).' file(s) are about to be written');
 
-        $review = $io->confirm('Review changes? All changes will be written otherwise!');
+        $review = !$input->getOption('no-review') && $io->confirm('Review changes? All changes will be written otherwise!', $input->isInteractive());
         $written = [];
         $writer = static function (string $file, string $contents) use ($io, &$written): void {
             if (!file_put_contents($file, $contents)) {
@@ -215,7 +219,7 @@ final class UserMaker implements MakerInterface
         return [$ns, $class];
     }
 
-    private function applicationPrerequisitesMet(ConsoleStyle $io): bool
+    private function applicationPrerequisitesMet(ConsoleStyle $io, InputInterface $input): bool
     {
         if (!isset($this->classMapping[User::class]) || !isset($this->classMapping[Credential::class])) {
             throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
@@ -225,7 +229,7 @@ final class UserMaker implements MakerInterface
         }
 
         $met = true;
-        if (!class_exists(Differ::class)) {
+        if (!class_exists(Differ::class) && $input->isInteractive() && !$input->getOption('no-review')) {
             $io->note(['It\'s recommended to (temporarily) enable the Diff implementation for better reviewing changes, run:', 'composer require --dev sebastian/diff']);
             $met = false;
         }

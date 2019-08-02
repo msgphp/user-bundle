@@ -10,6 +10,7 @@ use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
 use MsgPhp\Domain\Infrastructure\Doctrine\MappingConfig;
 use MsgPhp\User\Credential\Anonymous;
 use MsgPhp\User\Credential\Credential;
+use MsgPhp\User\Credential\EmailPassword;
 use MsgPhp\User\Credential\PasswordProtectedCredential;
 use MsgPhp\User\Credential\UsernameCredential;
 use MsgPhp\User\Model\ResettablePassword;
@@ -42,13 +43,13 @@ final class UserMaker implements MakerInterface
     private $projectDir;
     private $mappingConfig;
     private $credential;
-    private $passwordReset = false;
+    private $credentials = [];
     private $defaultRole;
+    private $passwordReset;
     private $configs = [];
     private $services = [];
     private $routes = [];
     private $writes = [];
-    private $interactive = false;
 
     /** @var \ReflectionClass */
     private $user;
@@ -70,7 +71,8 @@ final class UserMaker implements MakerInterface
     {
         $command
             ->setDescription('Configures user management')
-            ->addOption('no-review', null, InputOption::VALUE_NONE, 'Skip file reviewing (use e.g. GIT instead)')
+            ->addOption('credential', null, InputOption::VALUE_REQUIRED, 'The credential type to use (e.g. "EmailPassword")')
+            ->addOption('no-review', null, InputOption::VALUE_NONE, 'Skip file reviewing (use VCS instead)')
         ;
     }
 
@@ -84,24 +86,32 @@ final class UserMaker implements MakerInterface
 
     public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator): void
     {
-        $this->credential = $this->user = null;
+        $this->user = new \ReflectionClass($this->classMapping[User::class]);
+        $this->credential = $this->classMapping[Credential::class];
+        $this->credentials = self::getCredentials();
+        $this->defaultRole = null;
         $this->passwordReset = false;
-        $this->defaultRole = Configuration::DEFAULT_ROLE;
         $this->configs = $this->services = $this->routes = $this->writes = [];
-        $this->interactive = $input->isInteractive();
+
+        if (null !== $credential = $input->getOption('credential')) {
+            if (!isset($this->credentials[$credential])) {
+                throw new \LogicException('Unknown credential "'.$credential.'", should be one of "'.implode('", "', array_keys($this->credentials)).'".');
+            }
+            if (Anonymous::class !== $this->credential) {
+                throw new \LogicException('Cannot (re)configure credential "'.$credential.'", credential is already generated for "'.$this->credential.'".');
+            }
+            $this->credential = $this->credentials[$credential];
+        }
 
         if (!$this->applicationPrerequisitesMet($io, $input)) {
             return;
         }
-
-        $this->user = new \ReflectionClass($this->classMapping[User::class]);
-        $this->credential = $this->classMapping[Credential::class];
-
         if ($io->confirm('Enable Symfony Messenger configuration (recommended)? (config/packages/messenger.yaml)')) {
             $this->writes[] = [$this->projectDir.'/config/packages/messenger.yaml', $this->getSkeleton('messenger.tpl.php')];
         }
-        $this->generateUser($io);
-        $this->generateControllers($io);
+
+        $this->generateUser($io, $input);
+        $this->generateControllers($io, $input);
         $this->generateConsole($io);
 
         if ($this->configs || $this->services) {
@@ -144,7 +154,9 @@ final class UserMaker implements MakerInterface
             if (!is_dir($parent = \dirname($file))) {
                 mkdir($parent, 0777, true);
             }
-
+            if ($contents instanceof \Closure) {
+                $contents = $contents();
+            }
             if (!$review) {
                 $writer($file, $contents);
                 continue;
@@ -176,11 +188,12 @@ final class UserMaker implements MakerInterface
             return;
         }
 
-        $io->note('Don\'t forget to update your database schema, if needed');
         if ($io->confirm('Show written file names?')) {
             sort($written);
             $io->listing($written);
         }
+
+        $io->note('Don\'t forget to update your database schema, if needed');
     }
 
     private static function getConstructorSignature(\ReflectionClass $class): string
@@ -219,11 +232,23 @@ final class UserMaker implements MakerInterface
         return [$ns, $class];
     }
 
+    private static function getCredentials(): array
+    {
+        $credentials = [];
+        foreach (Configuration::getPackageMetadata()->findPaths('Credential') as $path) {
+            if ('.php' !== substr($path, -4) || !is_file($path) || Anonymous::class === ($credentialClass = Configuration::PACKAGE_NS.'Credential\\'.($credential = basename($path, '.php'))) || !is_subclass_of($credentialClass, Credential::class) || !class_exists($credentialClass, false)) {
+                continue;
+            }
+
+            $credentials[$credential] = $credentialClass;
+        }
+        ksort($credentials);
+
+        return $credentials;
+    }
+
     private function applicationPrerequisitesMet(ConsoleStyle $io, InputInterface $input): bool
     {
-        if (!isset($this->classMapping[User::class]) || !isset($this->classMapping[Credential::class])) {
-            throw new \LogicException('User class not configured. Did you install the bundle using Symfony Recipes?');
-        }
         if (null === $container = $this->kernel->getContainer()) {
             throw new \RuntimeException('Kernel is shutdown.');
         }
@@ -242,20 +267,10 @@ final class UserMaker implements MakerInterface
             $met = false;
         }
 
-        return $met || $io->confirm('Continue anyway?', false);
+        return $met || $io->confirm('Continue anyway?', !$input->isInteractive());
     }
 
-    private static function getHashing(): string
-    {
-        // Symfony 4.3
-        if (class_exists(SodiumPasswordEncoder::class)) {
-            return 'auto';
-        }
-
-        return 'argon2i';
-    }
-
-    private function generateUser(ConsoleStyle $io): void
+    private function generateUser(ConsoleStyle $io, InputInterface $input): void
     {
         $lines = file($fileName = $this->user->getFileName());
         $traits = array_flip($this->user->getTraitNames());
@@ -363,26 +378,16 @@ final class UserMaker implements MakerInterface
         };
 
         if (Anonymous::class === $this->credential && $io->confirm('Generate a user credential?')) {
-            $credentials = [];
-            foreach (Configuration::getPackageMetadata()->findPaths('Credential') as $path) {
-                if ('.php' !== substr($path, -4) || !is_file($path) || Anonymous::class === ($credentialClass = Configuration::PACKAGE_NS.'Credential\\'.($credential = basename($path, '.php'))) || !is_subclass_of($credentialClass, Credential::class) || !class_exists($credentialClass, false)) {
-                    continue;
-                }
-
-                $credentials[] = $credential;
-            }
-            sort($credentials);
-
-            $credential = $io->choice('Select credential type:', $credentials, 'EmailPassword');
+            $credential = $io->choice('Select credential type:', array_keys($this->credentials), self::splitClass(EmailPassword::class)[1]);
             $credentialClass = $this->credential = Configuration::PACKAGE_NS.'Credential\\'.$credential;
-            $credentialTrait = Configuration::PACKAGE_NS.'Model\\'.($credentialName = $credential.'Credential');
+            $credentialTrait = Configuration::PACKAGE_NS.'Model\\'.($credentialTraitName = $credential.'Credential');
             $credentialSignature = self::getConstructorSignature(new \ReflectionClass($credentialClass));
             $credentialInit = '$this->credential = new '.$credential.'('.self::getSignatureVariables($credentialSignature).');';
 
             $addUses[$credentialClass] = true;
             if (!isset($traits[$credentialTrait])) {
                 $addUses[$credentialTrait] = true;
-                $addTraitUses[$credentialName] = true;
+                $addTraitUses[$credentialTraitName] = true;
                 $enableEventHandler();
             }
 
@@ -458,9 +463,7 @@ PHP
             }
         }
 
-        do {
-            $this->defaultRole = $io->ask('Provide a default user role', $this->defaultRole);
-        } while (null === $this->defaultRole && $this->interactive);
+        $this->defaultRole = $io->ask('Provide a default user role', Configuration::DEFAULT_ROLE);
 
         $this->configs[] = ['role_providers' => ['default' => [$this->defaultRole]] + $roleProviders];
 
@@ -504,7 +507,7 @@ PHP
         }
     }
 
-    private function controllerPrerequisitesMet(ConsoleStyle $io, ?array &$controllers): bool
+    private function controllerPrerequisitesMet(ConsoleStyle $io, InputInterface $input, ?array &$controllers): bool
     {
         $controllers = [];
 
@@ -541,15 +544,15 @@ PHP
         if (\in_array(false, $prerequisites, true)) {
             $io->warning(['Not all controller dependencies are met, run:', 'composer require '.implode(' ', array_keys($prerequisites))]);
 
-            return $io->confirm('Continue anyway?', false);
+            return $io->confirm('Continue anyway?', !$input->isInteractive());
         }
 
         return true;
     }
 
-    private function generateControllers(ConsoleStyle $io): void
+    private function generateControllers(ConsoleStyle $io, InputInterface $input): void
     {
-        if (!$this->controllerPrerequisitesMet($io, $controllers)) {
+        if (!$this->controllerPrerequisitesMet($io, $input, $controllers)) {
             return;
         }
 
@@ -616,16 +619,16 @@ PHP;
 PHP;
     }
 
-    private function getSkeleton(string $path, array $vars = []): string
+    private function getSkeleton(string $path, array $vars = []): \Closure
     {
-        return (function () use ($path, $vars): string {
+        return function () use ($path, $vars): string {
             extract($vars + $this->getDefaultTemplateVars(), \EXTR_OVERWRITE);
 
             ob_start();
             require \dirname(__DIR__).'/Resources/skeleton/'.$path;
 
             return ob_get_clean();
-        })();
+        };
     }
 
     private function getTemplateFileName(string $path): string
@@ -646,7 +649,7 @@ PHP;
             'username_field' => $hasUsername ? $this->credential::getUsernameField() : null,
             'has_password' => $hasPassword = $this->hasPassword(),
             'password_field' => $hasPassword ? $this->credential::getPasswordField() : null,
-            'hashing' => self::getHashing(),
+            'hashing' => class_exists(SodiumPasswordEncoder::class) ? 'auto' : 'argon2i',
             'default_role' => $this->defaultRole,
         ];
     }

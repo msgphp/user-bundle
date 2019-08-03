@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use MsgPhp\User\Infrastructure\Console\RoleDefinition;
-use MsgPhp\User\Infrastructure\Console\UserDefinition;
+use MsgPhp\User\Infrastructure\Console\Definition\RoleDefinition;
+use MsgPhp\User\Infrastructure\Console\Definition\UserDefinition;
 use MsgPhp\UserBundle\DependencyInjection\Configuration;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 

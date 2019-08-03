@@ -159,7 +159,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         $loader->load('console.php');
 
         $container->getDefinition(ConsoleInfrastructure\Command\CreateUserCommand::class)
-            ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
+            ->setArgument('$contextDefinition', ExtensionHelper::registerConsoleClassContextDefinition(
                 $container,
                 $config['class_mapping'][User::class]
             ))
@@ -167,7 +167,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (isset($config['class_mapping'][Role::class])) {
             $container->getDefinition(ConsoleInfrastructure\Command\CreateRoleCommand::class)
-                ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
+                ->setArgument('$contextDefinition', ExtensionHelper::registerConsoleClassContextDefinition(
                     $container,
                     $config['class_mapping'][Role::class]
                 ))
@@ -176,7 +176,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (isset($config['class_mapping'][UserRole::class])) {
             $container->getDefinition(ConsoleInfrastructure\Command\AddUserRoleCommand::class)
-                ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
+                ->setArgument('$contextDefinition', ExtensionHelper::registerConsoleClassContextDefinition(
                     $container,
                     $config['class_mapping'][UserRole::class],
                     ConsoleClassContextDefinition::REUSE_DEFINITION

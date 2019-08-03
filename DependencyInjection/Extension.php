@@ -186,7 +186,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         if (isset($config['username_field'])) {
             $container->getDefinition(ConsoleInfrastructure\Command\ChangeUserCredentialCommand::class)
-                ->setArgument('$definition', ExtensionHelper::registerConsoleClassContextDefinition(
+                ->setArgument('$contextDefinition', ExtensionHelper::registerConsoleClassContextDefinition(
                     $container,
                     $config['class_mapping'][Credential::class],
                     ConsoleClassContextDefinition::ALWAYS_OPTIONAL | ConsoleClassContextDefinition::NO_DEFAULTS

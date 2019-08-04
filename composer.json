@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "msgphp/user": "^0.13",
+        "msgphp/user": "^0.14",
         "symfony/config": "^3.4 || ^4.2",
         "symfony/dependency-injection": "^3.4 || ^4.2",
         "symfony/http-kernel": "^3.4 || ^4.2"

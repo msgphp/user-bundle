@@ -556,8 +556,8 @@ PHP
             return;
         }
 
-        $formNs = trim($io->ask('Provide the form namespace', 'App\\Form\\User\\'), '\\');
-        $controllerNs = trim($io->ask('Provide the controller namespace', 'App\\Controller\\User\\'), '\\');
+        $formNs = trim($io->ask('Provide the form namespace', 'App\\Form\\'), '\\');
+        $controllerNs = trim($io->ask('Provide the controller namespace', 'App\\Controller\\'), '\\');
         $templateDir = trim($io->ask('Provide the base template directory', 'user/'), '/');
         $baseTemplate = ltrim($io->ask('Provide the base template file', 'base.html.twig'), '/');
         $baseTemplateBlock = $io->ask('Provide the base template block name', 'body');

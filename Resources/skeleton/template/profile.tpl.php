@@ -3,9 +3,6 @@
 {% block <?= $base_template_block ?> %}
     <h1>{{ 'title.my_profile'|trans }}</h1>
 
-    <p>{{ 'user.logged_in_as'|trans({ '%username%': <?= MsgPhp\UserBundle\Twig\GlobalVariable::NAME ?>.current.<?= $username_field ?> })|raw }}</p>
-    <p><a href="{{ path('logout') }}">{{ 'action.logout'|trans }}</a></p>
-
     <h2>{{ 'title.change_username'|trans }}</h2>
     {{ form_start(username_form) }}
         {{ form_errors(username_form) }}

@@ -64,19 +64,23 @@
             </trans-unit>
             <trans-unit id="action.forgot_password">
                 <source>action.forgot_password</source>
-                <target>Forgot your password?</target>
+                <target>Forgot password?</target>
             </trans-unit>
             <trans-unit id="action.request_password">
                 <source>action.request_password</source>
-                <target>Request my password</target>
+                <target>Request password</target>
             </trans-unit>
             <trans-unit id="action.register">
                 <source>action.register</source>
-                <target>Create my account</target>
+                <target>Create account</target>
             </trans-unit>
             <trans-unit id="action.reset_password">
                 <source>action.reset_password</source>
-                <target>Reset my password</target>
+                <target>Reset password</target>
+            </trans-unit>
+            <trans-unit id="action.view_profile">
+                <source>action.view_profile</source>
+                <target>View profile</target>
             </trans-unit>
             <trans-unit id="label.password">
                 <source>label.password</source>

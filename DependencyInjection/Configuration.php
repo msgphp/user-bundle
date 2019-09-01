@@ -202,6 +202,7 @@ final class Configuration implements ConfigurationInterface
             ->arrayNode('role_providers')
                 ->defaultValue(['default' => [self::DEFAULT_ROLE]])
                 ->requiresAtLeastOneElement()
+                ->cannotBeOverwritten()
                 ->beforeNormalization()
                     ->always(static function ($value) {
                         if (\is_array($value)) {

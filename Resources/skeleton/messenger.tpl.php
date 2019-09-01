@@ -1,4 +1,4 @@
-# see https://github.com/symfony/recipes/blob/master/symfony/messenger/4.3/config/packages/messenger.yaml
+<?php /** @link https://github.com/symfony/recipes/blob/master/symfony/messenger/4.3/config/packages/messenger.yaml */ ?>
 framework:
     messenger:
         # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.

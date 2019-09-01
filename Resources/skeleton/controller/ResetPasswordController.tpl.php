@@ -38,7 +38,7 @@ final class ResetPasswordController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $bus->dispatch(new ResetUserPassword($user->getId(), $form->getData()['<?= $password_field ?>']));
-            $flashBag->add('success', 'Your password has been changed.');
+            $flashBag->add('success', 'user.password_changed');
 
             return new RedirectResponse('/login');
         }

@@ -32,7 +32,7 @@ final class RegisterController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $bus->dispatch(new CreateUser($form->getData()));
-            $flashBag->add('success', 'You\'re successfully registered.');
+            $flashBag->add('success', 'user.registered');
 
             return new RedirectResponse('<?= $controllers['login'] ? '/login' : '/' ?>');
         }

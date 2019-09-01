@@ -18,6 +18,7 @@ final class Change<?= ucfirst($username_field) ?>Type extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('<?= $username_field?>', <?= $username_field_class ?>::class, [
+            'label' => 'label.username',
             'constraints' => [new NotBlank(), <?= 'email' === $username_field ? 'new Email(), ' : '' ?>new UniqueUsername()],
         ]);
     }

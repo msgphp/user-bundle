@@ -22,12 +22,19 @@ final class RegisterType extends AbstractType
     {
         $builder
             ->add('<?= $username_field ?>', <?= $username_field_class ?>::class, [
+                'label' => 'label.username',
                 'constraints' => [new NotBlank(), <?= 'email' === $username_field ? 'new Email(), ' : '' ?>new UniqueUsername()],
             ])
 <?php if ($has_password): ?>
             ->add('password', HashedPasswordType::class, [
                 'password_confirm' => true,
-                'password_options' => ['constraints' => new NotBlank()],
+                'password_options' => [
+                    'label' => 'label.password',
+                    'constraints' => new NotBlank()
+                ],
+                'password_confirm_options' => [
+                    'label' => 'label.confirm_password',
+                ],
             ])
 <?php endif; ?>
         ;

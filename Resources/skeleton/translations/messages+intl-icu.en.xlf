@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="user.forgot_password.password_requested">
+                <source>user.password_requested</source>
+                <target>You're password is requested.</target>
+            </trans-unit>
+            <trans-unit id="user.username_changed">
+                <source>user.username_changed</source>
+                <target>Your username has been changed.</target>
+            </trans-unit>
+            <trans-unit id="user.password_changed">
+                <source>user.password_changed</source>
+                <target>Your password has been changed.</target>
+            </trans-unit>
+            <trans-unit id="user.registered">
+                <source>user.registered</source>
+                <target>You're successfully registered.</target>
+            </trans-unit>
+            <trans-unit id="user.logged_in_as">
+                <source>user.logged_in_as</source>
+                <target><![CDATA[Logged in as: <em>{username}</em>]]></target>
+            </trans-unit>
+            <trans-unit id="title.forgot_password">
+                <source>title.forgot_password</source>
+                <target>Forgot Password</target>
+            </trans-unit>
+            <trans-unit id="title.login">
+                <source>title.login</source>
+                <target>Login</target>
+            </trans-unit>
+            <trans-unit id="title.my_profile">
+                <source>title.my_profile</source>
+                <target>My Profile</target>
+            </trans-unit>
+            <trans-unit id="title.change_username">
+                <source>title.change_username</source>
+                <target>Change Username</target>
+            </trans-unit>
+            <trans-unit id="title.change_password">
+                <source>title.change_password</source>
+                <target>Change Password</target>
+            </trans-unit>
+            <trans-unit id="title.register">
+                <source>title.register</source>
+                <target>Register</target>
+            </trans-unit>
+            <trans-unit id="title.reset_password">
+                <source>title.reset_password</source>
+                <target>Reset Password</target>
+            </trans-unit>
+            <trans-unit id="action.login">
+                <source>action.login</source>
+                <target>Login</target>
+            </trans-unit>
+            <trans-unit id="action.logout">
+                <source>action.logout</source>
+                <target>Logout</target>
+            </trans-unit>
+            <trans-unit id="action.change">
+                <source>action.change</source>
+                <target>Change</target>
+            </trans-unit>
+            <trans-unit id="action.forgot_password">
+                <source>action.forgot_password</source>
+                <target>Forgot your password?</target>
+            </trans-unit>
+            <trans-unit id="action.request_password">
+                <source>action.request_password</source>
+                <target>Request my password</target>
+            </trans-unit>
+            <trans-unit id="action.register">
+                <source>action.register</source>
+                <target>Create my account</target>
+            </trans-unit>
+            <trans-unit id="action.reset_password">
+                <source>action.reset_password</source>
+                <target>Reset my password</target>
+            </trans-unit>
+            <trans-unit id="label.password">
+                <source>label.password</source>
+                <target>Password</target>
+            </trans-unit>
+            <trans-unit id="label.confirm_password">
+                <source>label.confirm_password</source>
+                <target>Confirm password</target>
+            </trans-unit>
+            <trans-unit id="label.current_password">
+                <source>label.current_password</source>
+                <target>Current password</target>
+            </trans-unit>
+            <trans-unit id="label.username">
+                <source>label.username</source>
+                <target>Username</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

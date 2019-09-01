@@ -14,13 +14,22 @@ final class ChangePasswordType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('current', HashedPasswordType::class, [
-            'password_options' => ['constraints' => new UserPassword()],
-            'mapped' => false,
-        ]);
-        $builder->add('<?= $password_field ?>', HashedPasswordType::class, [
-            'password_confirm' => true,
-            'password_options' => ['constraints' => new NotBlank()],
-        ]);
+        $builder
+            ->add('<?= $password_field ?>', HashedPasswordType::class, [
+                'password_confirm' => true,
+                'password_options' => [
+                    'label' => 'label.password',
+                    'constraints' => new NotBlank(),
+                ],
+                'password_confirm_options' => [
+                    'label' => 'label.confirm_password',
+                ],
+            ])
+            ->add('current', HashedPasswordType::class, [
+                'label' => 'label.current_password',
+                'password_options' => ['constraints' => new UserPassword()],
+                'mapped' => false,
+            ])
+        ;
     }
 }

@@ -1,4 +1,4 @@
-# see https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml
+<?php /** @link https://github.com/symfony/recipes/blob/master/symfony/security-bundle/3.3/config/packages/security.yaml */ ?>
 security:
     encoders:
         MsgPhp\User\Infrastructure\Security\UserIdentity: <?= $hashing."\n" ?>

@@ -41,7 +41,7 @@ final class ProfileController
 
         if ($usernameForm->isSubmitted() && $usernameForm->isValid()) {
             $bus->dispatch(new ChangeUserCredential($user->getId(), $usernameForm->getData()));
-            $flashBag->add('success', 'Your username has been changed.');
+            $flashBag->add('success', 'user.username_changed');
 
             return new RedirectResponse('/profile');
         }
@@ -52,7 +52,7 @@ final class ProfileController
 
         if ($passwordForm->isSubmitted() && $passwordForm->isValid()) {
             $bus->dispatch(new ChangeUserCredential($user->getId(), $passwordForm->getData()));
-            $flashBag->add('success', 'Your password has been changed.');
+            $flashBag->add('success', 'user.password_changed');
 
             return new RedirectResponse('/profile');
         }

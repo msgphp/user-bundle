@@ -1,7 +1,7 @@
 {% extends '<?= $base_template ?>' %}
 
 {% block <?= $base_template_block ?> %}
-    <h1>Register</h1>
+    <h1>{{ 'title.register'|trans }} </h1>
 
     {{ form_start(form) }}
         {{ form_errors(form) }}
@@ -11,7 +11,7 @@
 <?php endif; ?>
 
         <div>
-            <input type="submit" value="Register" />
+            <input type="submit" value="{{ 'action.register'|trans }}" />
         </div>
     {{ form_end(form) }}
 {% endblock %}

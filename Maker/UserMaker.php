@@ -516,7 +516,7 @@ PHP
         }
 
         $controllers = [
-            'registration' => $this->hasUsername() && $io->confirm('Add a registration controller?'),
+            'register' => $this->hasUsername() && $io->confirm('Add a registration controller?'),
             'login' => $this->hasUsername() && $this->hasPassword() && $io->confirm('Add a login and profile controller?'),
             'forgot_password' => $this->hasUsername() && $this->passwordReset && $io->confirm('Add a forgot and reset password controller?'),
         ];
@@ -582,7 +582,7 @@ PHP
         $this->writes[] = [$this->getTemplateFileName($baseTemplate), $this->getSkeleton('template/base.tpl.php', $vars)];
         $this->writes[] = [$this->getTemplateFileName('partials/flash-messages.html.twig'), $this->getSkeleton('template/flash-messages.tpl.php', $vars)];
 
-        if ($controllers['registration']) {
+        if ($controllers['register']) {
             $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.tpl.php', $vars)];
             $this->writes[] = [$this->getClassFileName($controllerNs.'\\RegisterController'), $this->getSkeleton('controller/RegisterController.tpl.php', $vars)];
             $this->writes[] = [$this->getTemplateFileName($templateDir.'register.html.twig'), $this->getSkeleton('template/register.tpl.php', $vars)];

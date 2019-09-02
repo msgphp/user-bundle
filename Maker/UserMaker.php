@@ -580,7 +580,6 @@ PHP
 
         $this->writes[] = [$this->projectDir.'/translations/messages+intl-icu.en.xlf', file_get_contents(\dirname(__DIR__).'/Resources/skeleton/translations/messages+intl-icu.en.xlf')];
         $this->writes[] = [$this->getTemplateFileName($baseTemplate), $this->getSkeleton('template/base.tpl.php', $vars)];
-        $this->writes[] = [$this->getTemplateFileName('partials/flash-messages.html.twig'), $this->getSkeleton('template/flash-messages.tpl.php', $vars)];
 
         if ($controllers['register']) {
             $this->writes[] = [$this->getClassFileName($formNs.'\\RegisterType'), $this->getSkeleton('form/RegisterType.tpl.php', $vars)];

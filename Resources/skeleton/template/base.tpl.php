@@ -28,7 +28,15 @@
 <?php endif; ?>
         {% endblock %}
         {% block body %}
-            {{ include('partials/flash-messages.html.twig') }}
+            {% if app.request.hasPreviousSession %}
+                <ul>
+                    {% for type, messages in app.flashes %}
+                        {% for message in messages %}
+                            <li>[{{ type }}] {{ message|trans }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
             {% block <?= $base_template_block ?> %}{% endblock %}
         {% endblock %}
         {% block javascripts %}{% endblock %}

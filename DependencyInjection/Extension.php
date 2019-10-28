@@ -133,10 +133,15 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
 
         ExtensionHelper::finalizeDoctrineOrmRepositories($container, $config['class_mapping'], Configuration::DOCTRINE_REPOSITORY_MAPPING);
 
-        if ($config['username_lookup'] && $config['doctrine']['auto_sync_username']) {
+        if ($config['username_lookup']) {
             $container->getDefinition(DoctrineInfrastructure\UsernameLookup::class)
                 ->setArgument('$mapping', $config['username_lookup'])
             ;
+        } else {
+            $container->removeDefinition(DoctrineInfrastructure\UsernameLookup::class);
+        }
+
+        if ($config['username_lookup'] && $config['doctrine']['auto_sync_username']) {
             ($usernameListener = $container->getDefinition(DoctrineInfrastructure\Event\UsernameListener::class))
                 ->setArgument('$mapping', $config['username_lookup'])
             ;
@@ -149,7 +154,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 ;
             }
         } else {
-            $container->removeDefinition(DoctrineInfrastructure\UsernameLookup::class);
             $container->removeDefinition(DoctrineInfrastructure\Event\UsernameListener::class);
         }
     }

@@ -159,6 +159,7 @@ final class UserMaker implements MakerInterface
             }
             if (!$review) {
                 $writer($file, $contents);
+
                 continue;
             }
 
@@ -285,6 +286,7 @@ final class UserMaker implements MakerInterface
                 if ('{' === $token && $inClass && !$inClassBody) {
                     $inClassBody = true;
                 }
+
                 continue;
             }
 
@@ -308,6 +310,7 @@ final class UserMaker implements MakerInterface
                         $indent = end($spaces);
                     }
                 }
+
                 continue;
             }
 
@@ -420,7 +423,9 @@ final class UserMaker implements MakerInterface
             } else {
                 $constructor = array_map(static function (string $line) use ($nl, $indent): string {
                     return $indent.$line.$nl;
-                }, explode("\n", <<<PHP
+                }, explode(
+                    "\n",
+                    <<<PHP
 public function __construct({$credentialSignature})
 {
     {$credentialInit}

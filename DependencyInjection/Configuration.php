@@ -137,7 +137,10 @@ final class Configuration implements ConfigurationInterface
     {
         /** @var NodeBuilder $children */
         $children = TreeBuilderHelper::root(Extension::ALIAS, $treeBuilder)->children();
-        /** @psalm-suppress PossiblyNullReference */
+        /**
+         * @psalm-suppress PossiblyNullReference
+         * @psalm-suppress PossiblyUndefinedMethod
+         */
         $children
             ->classMappingNode('class_mapping')
                 ->requireClasses([User::class])

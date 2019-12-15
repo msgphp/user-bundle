@@ -220,6 +220,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                 $provider = $defaultProviderId;
             }
 
+            /** @var string $provider */
             $providers[] = new Reference($provider);
         }
 

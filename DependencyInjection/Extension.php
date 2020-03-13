@@ -11,8 +11,6 @@ use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
 use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
-use MsgPhp\User\Infrastructure\Security as SecurityInfrastructure;
-use MsgPhp\User\Repository;
 use MsgPhp\User\Role;
 use MsgPhp\User\User;
 use MsgPhp\User\UserRole;
@@ -21,7 +19,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
-use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
@@ -33,7 +30,7 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * @internal
  */
-final class Extension extends BaseExtension implements PrependExtensionInterface, CompilerPassInterface
+final class Extension extends BaseExtension implements PrependExtensionInterface
 {
     public const ALIAS = 'msgphp_user';
 
@@ -110,16 +107,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
                     Twig\GlobalVariable::NAME => '@'.Twig\GlobalVariable::class,
                 ],
             ]);
-        }
-    }
-
-    public function process(ContainerBuilder $container): void
-    {
-        if (FeatureDetection::hasSecurityBundle($container) && $container->hasDefinition($id = 'data_collector.security')) {
-            $container->getDefinition($id)
-                ->setClass(SecurityInfrastructure\DataCollector::class)
-                ->setArgument('$repository', new Reference(Repository\UserRepository::class, ContainerBuilder::NULL_ON_INVALID_REFERENCE))
-            ;
         }
     }
 

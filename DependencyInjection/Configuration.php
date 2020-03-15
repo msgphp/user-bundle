@@ -17,7 +17,7 @@ use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Credential\UsernameCredential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
-use MsgPhp\User\Infrastructure\Uuid as UuidInfrastructure;
+use MsgPhp\User\Infrastructure\Uid as UidInfrastructure;
 use MsgPhp\User\Model\AbstractCredential;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Role;
@@ -66,7 +66,7 @@ final class Configuration implements ConfigurationInterface
     private const ID_TYPE_MAPPING = [
         UserId::class => [
             'scalar' => ScalarUserId::class,
-            'uuid' => UuidInfrastructure\UserUuid::class,
+            'uuid' => UidInfrastructure\UserUuid::class,
         ],
     ];
     private const COMMAND_MAPPING = [

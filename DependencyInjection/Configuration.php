@@ -40,9 +40,6 @@ final class Configuration implements ConfigurationInterface
 {
     public const PACKAGE_NS = 'MsgPhp\\User\\';
     public const DEFAULT_ROLE = 'ROLE_USER';
-    public const DOCTRINE_TYPE_MAPPING = [
-        UserId::class => DoctrineInfrastructure\Type\UserIdType::class,
-    ];
     public const DOCTRINE_REPOSITORY_MAPPING = [
         Role::class => DoctrineInfrastructure\Repository\RoleRepository::class,
         User::class => DoctrineInfrastructure\Repository\UserRepository::class,
@@ -62,12 +59,6 @@ final class Configuration implements ConfigurationInterface
         Command\DeleteUserRole::class => [ConsoleInfrastructure\Command\DeleteUserRoleCommand::class],
         Command\DisableUser::class => [ConsoleInfrastructure\Command\DisableUserCommand::class],
         Command\EnableUser::class => [ConsoleInfrastructure\Command\EnableUserCommand::class],
-    ];
-    private const ID_TYPE_MAPPING = [
-        UserId::class => [
-            'scalar' => ScalarUserId::class,
-            'uuid' => UidInfrastructure\UserUuid::class,
-        ],
     ];
     private const COMMAND_MAPPING = [
         Role::class => [
@@ -240,9 +231,6 @@ final class Configuration implements ConfigurationInterface
                     ->booleanNode('auto_sync_username')->defaultTrue()->end()
                 ->end()
             ->end()
-        ->end()
-        ->validate()
-            ->always(ConfigHelper::defaultBundleConfig(self::ID_TYPE_MAPPING))
         ->end()
         ->validate()
             ->always(static function (array $config): array {

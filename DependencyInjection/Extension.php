@@ -95,8 +95,6 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
             ExtensionHelper::configureDoctrineOrm(
                 $container,
                 $config['class_mapping'],
-                $config['id_type_mapping'],
-                Configuration::DOCTRINE_TYPE_MAPPING,
                 Configuration::getPackageMetadata()->getDoctrineMappingFiles()
             );
         }

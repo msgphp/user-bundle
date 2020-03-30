@@ -11,6 +11,7 @@ use MsgPhp\Domain\Infrastructure\DependencyInjection\FeatureDetection;
 use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
+use MsgPhp\User\Infrastructure\Form as FormInfrastructure;
 use MsgPhp\User\Role;
 use MsgPhp\User\User;
 use MsgPhp\User\UserRole;
@@ -69,7 +70,7 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         if (FeatureDetection::isFormAvailable($container)) {
-            $loader->load('form.php');
+            $this->loadForm($config, $loader, $container);
         }
 
         if (FeatureDetection::isValidatorAvailable($container)) {
@@ -184,6 +185,15 @@ final class Extension extends BaseExtension implements PrependExtensionInterface
         }
 
         ExtensionHelper::finalizeConsoleCommands($container, $config['commands'], Configuration::CONSOLE_COMMAND_MAPPING);
+    }
+
+    private function loadForm(array $config, LoaderInterface $loader, ContainerBuilder $container): void
+    {
+        $loader->load('form.php');
+
+        if (!FeatureDetection::hasSecurityBundle($container)) {
+            $container->removeDefinition(FormInfrastructure\Type\HashedPasswordType::class);
+        }
     }
 
     private function configureRoleProvider(array $config, ContainerBuilder $container): void

@@ -262,8 +262,14 @@ final class Configuration implements ConfigurationInterface
 
     private static function guessUserCredential(string $class): string
     {
-        if (User::class === (new \ReflectionMethod($class, 'getCredential'))->getDeclaringClass()->getName()) {
+        $reflection = new \ReflectionMethod($class, 'getCredential');
+
+        if (User::class === $reflection->getDeclaringClass()->getName()) {
             return Anonymous::class;
+        }
+
+        if (Anonymous::class !== ($type = $reflection->getReturnType()->getName())) {
+            return $type;
         }
 
         $uses = class_uses($class);

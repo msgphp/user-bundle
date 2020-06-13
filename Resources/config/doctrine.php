@@ -10,12 +10,16 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\ref;
 
 return static function (ContainerConfigurator $container): void {
+    $service = function_exists('Symfony\Component\DependencyInjection\Loader\Configurator\service')
+        ? 'Symfony\Component\DependencyInjection\Loader\Configurator\service'
+        : 'Symfony\Component\DependencyInjection\Loader\Configurator\ref';
+
     $services = $container->services()
         ->defaults()
             ->autowire()
             ->autoconfigure()
             ->private()
-            ->bind(EntityManagerInterface::class, ref('msgphp.doctrine.entity_manager'))
+            ->bind(EntityManagerInterface::class, $service('msgphp.doctrine.entity_manager'))
 
         ->set(Doctrine\UsernameLookup::class)
 

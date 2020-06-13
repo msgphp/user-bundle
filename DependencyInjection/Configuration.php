@@ -17,11 +17,9 @@ use MsgPhp\User\Credential\Credential;
 use MsgPhp\User\Credential\UsernameCredential;
 use MsgPhp\User\Infrastructure\Console as ConsoleInfrastructure;
 use MsgPhp\User\Infrastructure\Doctrine as DoctrineInfrastructure;
-use MsgPhp\User\Infrastructure\Uid as UidInfrastructure;
 use MsgPhp\User\Model\AbstractCredential;
 use MsgPhp\User\Model\ResettablePassword;
 use MsgPhp\User\Role;
-use MsgPhp\User\ScalarUserId;
 use MsgPhp\User\User;
 use MsgPhp\User\UserAttributeValue;
 use MsgPhp\User\UserEmail;
@@ -126,8 +124,10 @@ final class Configuration implements ConfigurationInterface
 
     public function getConfigTreeBuilder(): TreeBuilder
     {
+        $treeBuilder = TreeBuilderHelper::create(Extension::ALIAS);
         /** @var NodeBuilder $children */
-        $children = TreeBuilderHelper::root(Extension::ALIAS, $treeBuilder)->children();
+        $children = TreeBuilderHelper::root($treeBuilder, Extension::ALIAS)->children();
+
         /**
          * @psalm-suppress PossiblyNullReference
          * @psalm-suppress PossiblyUndefinedMethod
@@ -268,7 +268,10 @@ final class Configuration implements ConfigurationInterface
             return Anonymous::class;
         }
 
-        if (Anonymous::class !== ($type = $reflection->getReturnType()->getName())) {
+        $type = $reflection->getReturnType();
+        $type = null === $type ? null : $type->getName();
+
+        if (null !== $type && Anonymous::class !== $type) {
             return $type;
         }
 

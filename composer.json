@@ -14,10 +14,10 @@
         }
     ],
     "require": {
-        "msgphp/user": "^0.16",
-        "symfony/config": "^3.4 || ^4.4 || ^5.0",
-        "symfony/dependency-injection": "^3.4 || ^4.4 || ^5.0",
-        "symfony/http-kernel": "^3.4 || ^4.4 || ^5.0"
+        "msgphp/user": "^0.2",
+        "symfony/config": "^3.4 || ^4.3 || ^5.0 || ^6.0",
+        "symfony/dependency-injection": "^3.4 || ^4.3 || ^5.0 || ^6.0",
+        "symfony/http-kernel": "^3.4 || ^4.3 || ^5.0 || ^6.0"
     },
     "config": {
         "preferred-install": {
